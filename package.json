@@ -7,12 +7,25 @@
     "express": "4.15.3"
   },
   "devDependencies": {
-    "nodemon": "1.11.0"
+    "babel-eslint": "7.2.3",
+    "csscomb": "4.2.0",
+    "eslint": "4.3.0",
+    "eslint-plugin-react": "7.1.0",
+    "nodemon": "1.11.0",
+    "pre-commit": "1.2.2",
+    "stylelint": "8.0.0"
   },
   "scripts": {
     "start": "nodemon app/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "npm run -s lint:eslint && npm run -s lint:stylelint && npm run -s lint:csscomb",
+    "lint:csscomb": "./node_modules/.bin/csscomb ./app/components",
+    "lint:stylelint": "./node_modules/.bin/stylelint ./app/components/**/*.scss",
+    "lint:eslint": "./node_modules/.bin/eslint ./ --format=unix --ext .js --ext .jsx"
   },
+  "pre-commit": [
+    "lint"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ixax/ingipro-practice.git"
