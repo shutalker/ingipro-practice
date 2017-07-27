@@ -1,4 +1,4 @@
-require('./sample.scss');
+require('./index.scss');
 
 function component() {
     const element = document.createElement('div');
