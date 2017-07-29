@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/vendor/bower_components/jquery/jquery.js"></script>
+    <script src="/socket.io-client/dist/socket.io.js"></script>
+</head>
+<body>
+<div id="room">
+    <div class="col-lg-10">
+        <input id="login_data" style="width:200px;"/>
+        <input type="button" id="login_button" value="Войти в комнату"/>
+    </div>
+    <div class="col-lg-10">
+        <input id="create_data" style="width:200px;"/>
+        <input type="button" id="create_button" value="Создать комнату"/>
+    </div>
+</div>
+
+<script>
+
+    const socket = io.connect();
+
+    socket.open();
+
+    $('#login_button').click(function () {
+        const room = $('#login_data').val();
+        $('#login_data').val('');
+
+        socket.emit('login room', room);
+    });
+
+    $('#create_button').click(function () {
+        const room = $('#create_data').val();
+        $('#create_data').val('');
+
+        socket.emit('create room', room);
+    });
+
+    socket
+        .on('room not found', () => alert('room not found'))
+        .on('room already exist', () => alert('room already exist'));
+</script>
+</body>
+</html>
