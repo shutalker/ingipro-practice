@@ -1,18 +1,17 @@
-const express = require('express');
 const http = require('http');
-const app = express();
 const path = require('path');
-const port = 3000;
+const express = require('express');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const cookieSession = require('express-session');
 
+const app = express();
+const port = 3000;
+
 app.use(express.static(path.join(__dirname, '..', 'build')));
-
+app.use(express.static(path.join(__dirname, '..', 'node_modules')));
 app.use(cookieParser());
-
 app.use(bodyParser());
-
 app.use(cookieSession({
     secret: 'ingipro',
     key: 'sid',
@@ -22,10 +21,6 @@ app.use(cookieSession({
         maxAge: null,
     },
 }));
-
-app.use(express.static(path.join(__dirname)));
-
-app.use(express.static(path.join(__dirname, '..', 'node_modules')));
 
 require('./routes')(app);
 

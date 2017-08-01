@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <script src="/vendor/bower_components/jquery/jquery.js"></script>
     <script src="/socket.io-client/dist/socket.io.js"></script>
 </head>
 <body>
 <div id="room">
-    <div class="col-lg-10">
+    <div>
         <input id="login_data" style="width:200px;"/>
         <input type="button" id="login_button" value="Войти в комнату"/>
     </div>
-    <div class="col-lg-10">
+    <div >
         <input id="create_data" style="width:200px;"/>
         <input type="button" id="create_button" value="Создать комнату"/>
     </div>
@@ -24,19 +23,9 @@
 
     socket.open();
 
-    $('#login_button').click(function () {
-        const room = $('#login_data').val();
-        $('#login_data').val('');
+    document.getElementById('login_button').onclick = () => socket.emit('login room', document.getElementById('login_data').value);
+    document.getElementById('create_button').onclick = () => socket.emit('create room', document.getElementById('create_data').value);
 
-        socket.emit('login room', room);
-    });
-
-    $('#create_button').click(function () {
-        const room = $('#create_data').val();
-        $('#create_data').val('');
-
-        socket.emit('create room', room);
-    });
 
     socket
         .on('room not found', () => alert('room not found'))
