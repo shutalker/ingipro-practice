@@ -1,11 +1,20 @@
 const randomColor = require('randomcolor');
 const Window = require('../entities');
-const users = [];
+const users = {};
 let windows = {
     id0: new Window(/*...*/),// координаты соответсвующие одному окну, занимающему весь экран
 };
-//let block = false; //???
+let lock = false;
+let userLock;
 
+function lockCheck(f, user) {
+    return function () {
+        if (lock && user !== userLock) {
+            return;
+        }
+        return f.apply(this, arguments);
+    };
+}
 
 module.exports = function (server) {
     const io = require('socket.io').listen(server);
@@ -13,57 +22,95 @@ module.exports = function (server) {
     io.sockets.on('connection', (socket) => {
 
         socket
-            .on('add user', (obj) => {
-                const {login, id} = JSON.parse(obj);
+            .on('user:join', (obj) => {
+                const {name, userId} = JSON.parse(obj);
 
-                if (users.length === 0) {
-                    socket.emit('first user');
+                if (Object.keys(users).length === 0) {
+                    socket.emit('conference:created');
                 } else {
-                    socket.emit('synchronization', JSON.stringify(windows));
+                    socket.emit('state:sync', JSON.stringify({
+                        users: users,
+                        payload: windows,
+                    }));
                 }
 
-                users.push({
-                    login: login,
+                users[userId] = {
+                    name: name,
                     color: randomColor({luminosity: 'light'}),
-                    id: id,
-                });
+                };
 
-                socket.broadcast.emit('new user', JSON.stringify(users[users.length]));
+                socket.broadcast.emit('user:join', JSON.stringify(users[userId]));
             })
-            .on('draw mark', (obj) => {
-                const {windowId, line} = JSON.parse(windowId, line);
+            .on('canvas:lock', (obj) => {
+                const {userId} = JSON.parse(obj);
 
-                windows[windowId].createMark(line);
-
-                socket.broadcast.emit('draw mark', obj);
+                if (!lock) {
+                    userLock = userId;
+                    socket.emit('lock:accept');
+                } else {
+                    socket.emit('lock:denied');
+                }
             })
-            .on('del marks', (obj) => {
-                const {windowId} = JSON.parse(obj);
+            .on('canvas:unlock', (obj) => {
+                const {userId} = JSON.parse(obj);
 
-                windows[windowId].delMarks();
-
-                socket.broadcast.emit('del marks', obj);
+                if (lock && userLock === userId) {
+                    lock = false;
+                }
             })
-            .on('add model', (obj) => {
-                const {windowId, model} = JSON.parse(obj);
+            .on('mark:add', (obj) => {
+                const {userId, line, sectionId} = JSON.parse(obj);
 
-                windows[windowId].loadModel(model);
+                lockCheck(() => {
+                    windows[sectionId].createMark(line, users[userId].color);
 
-                socket.broadcast.emit('add model', obj);
+                    socket.broadcast.emit('mark:add', obj);
+                }, userId)();
             })
-            .on('zoom model', (obj) => {
-                const {windowId, scale} = JSON.parse(obj);
+            .on('mark:clean', (obj) => {
+                const {sectionId, userId} = JSON.parse(obj);
 
-                windows[windowId].model.zoom(scale);
+                lockCheck(() => {
+                    windows[sectionId].delMarks();
 
-                socket.broadcast.emit('zoom model', obj);
+                    socket.broadcast.emit('mark:clean', obj);
+                }, userId)();
+
             })
-            .on('create window', (obj) => { //на самом деле сложнее, т.к создание окна, затронет соседние окна
-                const {windowId, coordinates} = JSON.parse(obj);
+            .on('canvas:upload', (obj) => {
+                const {sectionId, model, userId} = JSON.parse(obj);
 
-                windows[windowId] = new Window(coordinates);
+                lockCheck(() => {
+                    windows[sectionId].loadModel(model);
 
-                socket.broadcast.emit('create window', obj);
+                    socket.broadcast.emit('canvas:upload', obj);
+                }, userId)();
+
+            })
+            .on('canvas:zoom', (obj) => {
+                const {sectionId, zoom, userId} = JSON.parse(obj);
+
+                lockCheck(() => {
+                    windows[sectionId].model.zoom(zoom);
+
+                    socket.broadcast.emit('canvas:zoom', obj);
+                }, userId)();
+            })
+            .on('canvas:update', (obj) => {
+                const {payload, userId} = JSON.parse(obj);
+
+                lockCheck(() => {
+                    for (let info of payload) {
+                        if (!Object.keys(windows).includes(info.sectionId)) {
+                            windows[info.sectionId] = new Window(info.coordinates);
+                        } else {
+                            windows[info.sectionId].coordinates = info.coordinates;
+                        }
+                    }
+
+                    socket.broadcast.emit('canvas:update', obj);
+                }, userId)();
+
             });
     });
 

@@ -3,12 +3,13 @@ function isSame(arr1, arr2) {
 }
 
 class Polyline{
-    constructor(polyline) {
+    constructor(polyline, color) {
         this.polyline = polyline; //[]
+        this.color = color;
     }
 
-    changeIfTheSame(line) {
-        if (isSame(line.slice(0, this.polyline.length), this.polyline)) {
+    changeIfTheSame(line, color) {
+        if (isSame(line.slice(0, this.polyline.length), this.polyline) && this.color === color) {
             this.polyline = line;
             return true;
         }
@@ -36,7 +37,7 @@ class Model{
     }
 }
 
-module.exports.Window = class {
+module.exports = class {
     constructor(coordinates) {
         this.coordinates = coordinates; // [[]]
         this.marks = []; //[Polyline]
@@ -46,9 +47,9 @@ module.exports.Window = class {
         this.model = new Model(model);
     }
 
-    createMark(line) { //line =[]
+    createMark(line, color) { //line =[]
         for (const polyline of this.marks) {
-            if (polyline.changeIfTheSame(line)) {
+            if (polyline.changeIfTheSame(line, color)) {
                 return;
             }
         }
