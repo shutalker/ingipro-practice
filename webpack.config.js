@@ -37,11 +37,55 @@ function getConfig(env) {
             rules: [{
                 test: /\.jsx?$/,
                 loader: 'babel-loader',
+                options: {
+                    presets: ['env'],
+                },
             }, {
                 test: /\.css$/,
                 use: TextPlugin.extract({
                     fallback: 'style-loader',
-                    use: 'css-loader',
+                    use: [
+                        {
+                            loader: 'css-loader',
+                            options: {
+                                importLoaders: 1,
+                                sourceMap: true,
+                                minimize: isDevelopment ? false : {
+                                    autoprefixer: false,
+                                    core: true,
+                                    convertValues: true,
+                                    discardComments: true,
+                                    discardEmpty: true,
+                                    mergeRules: true,
+                                    minifyGradients: true,
+                                    minifySelectors: true,
+                                    normalizeString: true,
+                                    normalizeUrl: true,
+                                    reduceBackgroundRepeat: true,
+                                    reducePositions: true,
+                                    reduceTransforms: true,
+                                    svgo: false,
+                                    styleCache: true,
+                                    reduceTimingFunctions: true,
+                                    reduceInitial: true,
+                                    orderedValues: true,
+                                    normalizeCharset: true,
+                                    minifyParams: true,
+                                    minifyFontValues: true,
+                                    mergeLonghand: true,
+                                    functionOptimiser: true,
+                                    filterOptimiser: true,
+                                    discardOverridden: true,
+                                    discardDuplicates: true,
+                                    colormin: true,
+                                    zindex: false,
+                                },
+                            },
+                        },
+                        {
+                            loader: 'postcss-loader',
+                        },
+                    ],
                 }),
             }, {
                 test: /\.(gif|jpe?g|png)$/,
