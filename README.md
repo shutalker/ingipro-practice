@@ -6,8 +6,7 @@ ingipro.com practice 2017
 ```
 nvm use
 npm install
-npm run build
-npm start
+npm run dev
 open http://localhost:3000/
 
 ```
