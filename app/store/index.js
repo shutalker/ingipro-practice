@@ -1,4 +1,5 @@
 const randomColor = require('randomcolor');
+const uuidv4 = require('uuid/v4');
 const userList = {};
 const store = {};
 let lock = false;
@@ -14,49 +15,35 @@ function lockCheck(userId, f) {
     };
 }
 
-exports.userAdd = function (userId, login, socket) {
-    if (Object.keys(userList).length === 0) {
-        socket.emit('conference:created');
-    } else {
-        socket.emit('state:sync', {
-            users: userList,
-            payload: store,
-        });
-    }
-
+exports.userAdd = function (login) {
+    const userId = uuidv4();
     userList[userId] = {
         name: login,
         color: randomColor({luminosity: 'light'}),
     };
 
-    socket.broadcast.emit('user:join', userList[userId]);
+    return {
+        users: Object.keys(userList).map((value) => ({
+            userId: value,
+            name: userList[value].name,
+            color: userList[value].color,
+        })),
+        data: store,
+    };
 };
 
-exports.lock = function (userId, socket) {
+exports.lock = function (userId) {
     if (!lock) {
         userLock = userId;
-        socket.emit('lock:accept');
-    } else {
-        socket.emit('lock:denied');
+        return true;
     }
+    return false;
 };
 
-exports.unlock = function (userId, socket) {
-    if (lock && userLock === userId) {
-        lock = false;
-        socket.emit('unlock:accept');
-    } else {
-        socket.emit('unlock:denied');
-    }
+exports.unlock = function (userId) {
+    lockCheck(userId, () => { lock = false; })();
 };
 
-exports.addData = function (type, payload, socket) {
-    const allow = (lockCheck(payload.userId, () => {
-        store[type] = payload;
-    }))();
-    if (allow){
-        socket.broadcast.emit('main', {type: payload});
-    } else {
-        socket.emit('access:denied');
-    }
+exports.addData = function (type, payload) {
+    return (lockCheck(payload.userId, () => {store[type] = payload;}))();
 };

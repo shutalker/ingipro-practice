@@ -3,16 +3,32 @@ const store = require('../store');
 function editStore(type, payload, socket) {
     switch (type) {
         case 'user:join':
-            store.userAdd(payload.userId, payload.name, socket);
+            const data = store.userAdd(payload.name);
+            socket.emit('main', {
+                type: 'conference:sync',
+                payload: data,
+            });
+            socket.broadcast.emit('main', {
+                type: 'conference:join',
+                payload: data.users[data.users.length - 1],
+            });
             break;
         case 'canvas:lock':
-            store.lock(payload.userId, socket);
+            if (store.lock(payload.userId, socket)){
+                socket.emit('main', {type: 'lock:accept'});
+                break;
+            }
+            socket.emit('main', {type: 'lock:denied'});
             break;
         case 'canvas:unlock':
             store.unlock(payload.userId, socket);
             break;
         default:
-            store.addData(type, payload, socket);
+            if (store.addData(type, payload, socket)){
+                socket.broadcast.emit('main', {type: payload});
+            } else {
+                socket.emit('main', {type: 'access:denied'});
+            }
     }
 }
 
