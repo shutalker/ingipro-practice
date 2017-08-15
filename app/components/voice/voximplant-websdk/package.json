@@ -1,0 +1,50 @@
+{
+  "_from": "voximplant-websdk@^4.1.887",
+  "_id": "voximplant-websdk@4.1.887",
+  "_inBundle": false,
+  "_integrity": "sha1-1QSQFkAYIxiHuzufzbEvnjIqkAk=",
+  "_location": "/voximplant-websdk",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "voximplant-websdk@^4.1.887",
+    "name": "voximplant-websdk",
+    "escapedName": "voximplant-websdk",
+    "rawSpec": "^4.1.887",
+    "saveSpec": null,
+    "fetchSpec": "^4.1.887"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/voximplant-websdk/-/voximplant-websdk-4.1.887.tgz",
+  "_shasum": "d50490164018231887bb3b9fcdb12f9e322a9009",
+  "_spec": "voximplant-websdk@^4.1.887",
+  "_where": "C:\\Users\\Dmitriy\\ingipro-practice\\app\\components\\voice",
+  "author": {
+    "name": "Zingaya Inc.",
+    "email": "info@voximplant.com",
+    "url": "http://voximplant.com"
+  },
+  "bundleDependencies": false,
+  "dependencies": {},
+  "deprecated": false,
+  "description": "VoxImplant Web SDK for embedding voice and video communication into web applications.",
+  "devDependencies": {},
+  "homepage": "http://voximplant.com",
+  "keywords": [
+    "npm",
+    "module",
+    "voximplant",
+    "websdk"
+  ],
+  "license": "Commercial",
+  "main": "voximplant.min.js",
+  "name": "voximplant-websdk",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "4.1.887"
+}
