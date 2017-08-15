@@ -1,49 +1,53 @@
 const randomColor = require('randomcolor');
 const uuidv4 = require('uuid/v4');
-const userList = {};
-const store = {};
+//const userList = {};
+const store = {
+    userList: [],
+};
 let lock = false;
 let userLock;
 
-function lockCheck(userId, f) {
-    return function () {
-        if (lock && userId !== userLock) {
-            return false;
-        }
-        f.apply(this, arguments);
-        return true;
-    };
-}
-
 exports.userAdd = function (login) {
-    const userId = uuidv4();
-    userList[userId] = {
+    const id = uuidv4();
+    store.userList.push({
+        userId: id,
         name: login,
         color: randomColor({luminosity: 'light'}),
-    };
+    });
 
-    return {
-        users: Object.keys(userList).map((value) => ({
-            userId: value,
-            name: userList[value].name,
-            color: userList[value].color,
-        })),
-        data: store,
-    };
+    return store;
+};
+
+exports.userDel = function (userId) {
+    for (let i = 0; i < store.userList.length; i++){
+        if (store.userList[i].userId === userId){
+            const user = store.userList[i];
+            store.userList.splice(i, 1);
+            return user;
+        }
+    }
+    return null;
 };
 
 exports.lock = function (userId) {
     if (!lock) {
         userLock = userId;
+        lock = true;
         return true;
     }
     return false;
 };
 
 exports.unlock = function (userId) {
-    lockCheck(userId, () => { lock = false; })();
+    if (lock && userLock === userId) {
+        lock = false;
+    }
 };
 
 exports.addData = function (type, payload) {
-    return (lockCheck(payload.userId, () => {store[type] = payload;}))();
+    if (lock && userLock === payload.userId){
+        store[type] = payload;
+        return true;
+    }
+    return false;
 };
