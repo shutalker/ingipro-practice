@@ -25,55 +25,24 @@ class Mediator {
 
     emit(type, ...args) {
         let sliceChar = type.slice( 0, type.indexOf(':') ) + ': *';
+
+        const data = { type, payload: args }
+
         if ( this._listeners[ sliceChar ] ) {
-            this._listeners[sliceChar].forEach( listener => listener.apply(null, args) );
+            this._listeners[sliceChar].forEach( listener => listener.call(null, data) );
         }
 
         if (this._listeners['*']) {                                                         //Это, как я понял, означает, что если какой-то слушатель (к примеру Сокеты) подписан на все события, то при любом событии сокеты тоже обрабатывают его
-            this._listeners['*'].forEach( listener => listener.apply(null, args) );
+            this._listeners['*'].forEach( listener => listener.call(null, data) );
         }
 
         if (!this._listeners[type]) {
             return;
         }
 
-        this._listeners[type].forEach( listener => listener.apply(null, args) );
+        this._listeners[type].forEach( listener => listener.call(null, data) );
     }
 
 }
 
-class Hello {
-    onHi(text) {
-        console.log('Hi', text);
-    }
-}
-
-class User {
-    constructor() {
-        this._users = [];
-    }
-    newUser(name) {
-        this._users.push({name: name});
-    }
-    printUsers() {
-        console.log(this._users);
-    }
-}
-
-let foo = function() {
-    console.log('All events');
-}
-
-const mediator = new Mediator();
-const hello = new Hello();
-const users = new User();
-
-users.newUser('Oleg');
-users.newUser('Volodya');
-
-mediator.on('*', foo);
-mediator.on('user: *', users.printUsers.bind(users));
-mediator.emit('user: print', 'Oleg');
-
-mediator.on('helloworld', hello.onHi.bind(hello));
-mediator.emit('helloworld', 'Artur');
+export default new Mediator();
