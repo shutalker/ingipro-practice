@@ -1,19 +1,24 @@
+'use strict';
+
+import io from 'socket.io-client';
+import Mediator from '../mediator';
+
 class WebSocket {
-    constructor(mediator) {
+    constructor() {
         this._socket = io.connect();
-        this._mediator = mediator;
-        console.log('"WebSocket" created');
+
+        this._socket.on( 'main', this.socketEmitMediator.bind(this) )                           //Recv from Server
+
+        Mediator.on('*', this.socketOnMediator.bind(this));
     }
 
-    socketOnMediator(data) {
-        this._socket.emit('main', data);                                    //Send on Server
-
-        this._socket.on( 'main', data => this.socketEmitMediator(data) )    //Recv from Server
+    socketOnMediator(data, type) {
+        this._socket.emit('main', { type, payload: data } );                                    //Send on Server
     }
 
-    socketEmitMediator(data) {                                              //mediator.emit
-        this._mediator.emit(data.type, data.payload);
+    socketEmitMediator(data) {
+        Mediator.emit(data.type, data.payload);
     }
 }
 // kind of Singleton pattern
-//export default new WebSocket();
+export default new WebSocket();

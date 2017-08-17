@@ -10,6 +10,10 @@ class Mediator {
             this._listeners[type] = [];
         }
 
+        if ( this._listeners[type].includes(listener) ) {
+            return;
+        }
+
         this._listeners[type].push(listener);
     }
 
@@ -23,26 +27,23 @@ class Mediator {
         }
     }
 
-    emit(type, ...args) {
+    emit(type, data) {
         let sliceChar = type.slice( 0, type.indexOf(':') ) + ': *';
 
-        const data = { type, payload: args }
-
-        if ( this._listeners[ sliceChar ] ) {
+        if ( this._listeners[sliceChar] ) {
             this._listeners[sliceChar].forEach( listener => listener.call(null, data) );
         }
 
-        if (this._listeners['*']) {                                                         //Это, как я понял, означает, что если какой-то слушатель (к примеру Сокеты) подписан на все события, то при любом событии сокеты тоже обрабатывают его
-            this._listeners['*'].forEach( listener => listener.call(null, data) );
+        if (this._listeners['*']) {
+            this._listeners['*'].forEach( listener => listener.call(null, data, type) );
         }
 
-        if (!this._listeners[type]) {
+        if (this._listeners[type]) {
+            this._listeners[type].forEach( listener => listener.call(null, data) );
+        } else {
             return;
         }
-
-        this._listeners[type].forEach( listener => listener.call(null, data) );
     }
-
 }
 
 export default new Mediator();
