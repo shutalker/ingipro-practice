@@ -41,9 +41,7 @@ class Mediator {
 
         if (this._listeners[type]) {
             this._listeners[type].forEach( listener => listener.call(null, data, type) );
-        } else {
-            return;
-        }
+        } 
     }
 }
 
