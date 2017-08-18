@@ -28,7 +28,11 @@ class Mediator {
         }
     }
 
-    emit(type, data) {
+    emit(type, data, websocket) {
+        if (websocket) {
+            return;
+        }
+        
         let sliceChar = type.slice( 0, type.indexOf(':') ) + ': *';
 
         if ( this._listeners[sliceChar] ) {

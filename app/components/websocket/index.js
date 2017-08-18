@@ -17,7 +17,7 @@ class WebSocket {
     }
 
     socketEmitMediator(data) {
-        Mediator.emit(data.type, data.payload);
+        Mediator.emit(data.type, data.payload, true);
     }
 }
 // kind of Singleton pattern
