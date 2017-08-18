@@ -28,15 +28,11 @@ class Mediator {
         }
     }
 
-    emit(type, data, websocket) {
-        if (websocket) {
-            return;
-        }
-        
+    emit(type, data) {
         let sliceChar = type.slice( 0, type.indexOf(':') ) + ': *';
 
         if ( this._listeners[sliceChar] ) {
-            this._listeners[sliceChar].forEach( listener => listener.call(null, data) );
+            this._listeners[sliceChar].forEach( listener => listener.call(null, data, type) );
         }
 
         if (this._listeners['*']) {
@@ -44,7 +40,7 @@ class Mediator {
         }
 
         if (this._listeners[type]) {
-            this._listeners[type].forEach( listener => listener.call(null, data) );
+            this._listeners[type].forEach( listener => listener.call(null, data, type) );
         } else {
             return;
         }

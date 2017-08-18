@@ -7,18 +7,26 @@ class WebSocket {
     constructor() {
         this._socket = io.connect();
 
-        this._socket.on( 'main', this.socketEmitMediator.bind(this) )                           //Recv from Server
+        this._socket.on( 'main', this.socketEmitMediator.bind(this) );                           //Recv from Server
 
         Mediator.on('*', this.socketOnMediator.bind(this));
     }
 
     socketOnMediator(data, type) {
-        this._socket.emit('main', { type, payload: data } );                                    //Send on Server
+        if (data._fromServer) {
+            return;
+        } else {                                                                                 //Send on Server
+            this._socket.emit('main', { type, payload: data } );
+        }
     }
 
     socketEmitMediator(data) {
-        Mediator.emit(data.type, data.payload, true);
+        const {type, payload} = data;
+        payload._fromServer = true;
+
+        Mediator.emit(type, payload);
     }
 }
+
 // kind of Singleton pattern
 export default new WebSocket();
