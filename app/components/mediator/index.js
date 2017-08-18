@@ -22,6 +22,7 @@ class Mediator {
             for (let i = 0; i < this._listeners[type].length; i++) {
                 if(this._listeners[type][i] === listener) {
                     this._listeners[type].splice(i, 1);
+                    return;
                 }
             }
         }
