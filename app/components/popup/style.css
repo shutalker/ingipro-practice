@@ -1,0 +1,16 @@
+#popup {
+  width: 240px;
+  height: 60px;
+  padding: 5px 10px;
+  border: none;
+  position: relative;
+  top: -70px;
+  left: 0;
+}
+
+#popupLabel {
+  margin: 15px auto;
+  text-align: center;
+  font-size: 16pt;
+  color: white;
+}

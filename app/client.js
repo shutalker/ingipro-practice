@@ -2,6 +2,7 @@ import Layout from 'components/layout';
 import Login from 'components/login';
 import Users from 'components/users';
 import mediator from 'components/mediator'; // instance of component
+import Popup from 'components/popup';
 import 'components/store';
 import 'components/websocket';
 
@@ -9,6 +10,7 @@ import 'components/websocket';
 const layout = new Layout(document.querySelector('.layout'));
 const login = new Login(document.querySelector('.login'));
 const users = new Users(document.querySelector('.users'));
+const popup = new Popup(document.getElementById('popup'));
 
 // init, show login form
 login.show();
