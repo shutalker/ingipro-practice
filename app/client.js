@@ -10,7 +10,7 @@ import 'components/websocket';
 const layout = new Layout(document.querySelector('.layout'));
 const login = new Login(document.querySelector('.login'));
 const users = new Users(document.querySelector('.users'));
-const popup = new Popup(document.getElementById('popup'));
+const popup = new Popup(document.querySelector('.popup-control-lock-status'),               'TestUser');
 
 // init, show login form
 login.show();

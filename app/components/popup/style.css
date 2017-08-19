@@ -1,16 +1,57 @@
-#popup {
-  width: 240px;
-  height: 60px;
-  padding: 5px 10px;
-  border: none;
-  position: relative;
-  top: -70px;
-  left: 0;
+/*general popup styles*/
+
+.popup-control-lock-status {
+    width: 240px;
+    height: 60px;
+    padding: 5px 10px;
+    border: none;
+    position: relative;
+    top: -70px;
+    left: 0;
+    transition: top 1s ease;
 }
 
-#popupLabel {
-  margin: 15px auto;
-  text-align: center;
-  font-size: 16pt;
-  color: white;
+
+/*label position*/
+
+.popup-control-lock-status.popup-show {
+    top: 0;
+}
+
+
+/*popup background wrapper*/
+
+.popup-control-lock-status > .popup-background {
+    display: table;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    transition: background-color 0.5s ease;
+}
+
+
+/*popup background wrapper styles*/
+
+.popup-control-lock-status > .popup-background.popup-try-lock {
+    background-color: #0099ff;
+}
+
+.popup-control-lock-status > .popup-background.popup-lock-accepted {
+    background: #58d865;
+}
+
+.popup-control-lock-status > .popup-background.popup-lock-denied {
+    background: #f94f4f;
+}
+
+
+/*inner label*/
+
+.popup-control-lock-status > .popup-background > .popup-label {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 14pt;
+    color: white;
 }

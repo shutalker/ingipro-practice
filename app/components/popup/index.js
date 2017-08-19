@@ -2,90 +2,85 @@ import mediator from '../mediator';
 
 class Popup {
 
-    constructor(domNode) {
+    constructor(domNode, userName) {
         this._domNode = domNode;
-        this._styles = {
-            tryLock: {
-                message: '<p id="popupLabel">Trying to lock...</p>',
-                background: '#0099ff',
-            },
+        this._innerDiv = domNode.querySelector('.popup-background');
+        this._userName = userName;
+        this._showDuration = 2000;
+        this._popupShowStyle = 'popup-show';
 
-            lockAccepted: {
-                message: '<p id="popupLabel">Lock accepted!</p>',
-                background: '#4ff963',
-            },
-
-            lockDenied: {
-                message: '<p id="popupLabel">Lock denied!</p>',
-                background: '#f94f4f',
-            },
+        this._lockStatus = {
+            tryLock: '<p class="popup-label">' + this._userName
+                + ': захват управления...</p>',
+            lockAccepted: '<p class="popup-label">Успешный захват'
+                + 'управления!</p>',
+            lockDenied: '<p class="popup-label">Захват управления не'
+                + ' удался!</p>',
         };
 
-        this._transition = {
-            default: {
-                transitionProperty: 'top',
-                transitionDuration: '1s',
-                transitionTimingFunction: 'ease',
-            },
-
-            changeLabelStyle: {
-                transitionProperty: 'background-color',
-                transitionDuration: '0.5s',
-                transitionTimingFunction: 'ease',
-            },
+        this._labelStyle = {
+            tryLock: 'popup-try-lock',
+            lockAccepted: 'popup-lock-accepted',
+            lockDenied: 'popup-lock-denied',
         };
+
+        this._timerId = null;
 
         this._hide = this._hidePopup.bind(this);
 
-        mediator.on('canvas:lock', this.tryLock.bind(this));
-        mediator.on('canvas:lock:accept', this.acceptLock.bind(this));
-        mediator.on('canvas:lock:denied', this.denyLock.bind(this));
+        mediator.on('canvas:lock', this.lockStatusHandler.bind(this));
+        mediator.on('lock:*', this.lockStatusHandler.bind(this));
     }
 
-    _setStyles(mode) {
-        this._domNode.innerHTML = this._styles[mode].message;
-        this._domNode.style.backgroundColor = this._styles[mode].background;
+    _resetDeferred() {
+        if (this._timerId) {
+            clearTimeout(this._timerId);
+        }
+
+        this._timerId = null;
     }
 
-    _setTransitionProp(mode) {
-        this._domNode.style.transitionProperty = this._transition[mode]
-            .transitionProperty;
+    _setClass(className, nodeToModify, classContainer) {
+        if (!nodeToModify.classList.contains(className)) {
+            if (classContainer !== 'undefined') {
+                for (let prop in classContainer) {
+                    nodeToModify.classList.remove(classContainer[prop]);
+                }
+            }
 
-        this._domNode.style.transitionDuration = this._transition[mode]
-            .transitionDuration;
-
-        this._domNode.style.transitionTimingFunction = this._transition[mode]
-            .transitionTimingFunction;
+            nodeToModify.classList.add(className);
+        }
     }
 
     _showPopup() {
-        this._domNode.style.top = '0';
+        this._domNode.classList.add(this._popupShowStyle);
+        this._timerId = setTimeout(this._hide, this._showDuration);
     }
 
     _hidePopup() {
-        this._setTransitionProp('default');
-        this._domNode.style.top = '-70px';
+        this._domNode.classList.remove(this._popupShowStyle);
+        this._resetDeferred();
     }
+    
+    lockStatusHandler(data, type) {
+    	const parsedType = type.split(':');
+        let typeHandler = 'tryLock';
+        
+        //if event type name is 'lock:[accept/denied]'
+        if (parsedType[0] !== 'canvas') {
+            typeHandler = (parsedType[1] === 'accept') ? 'lockAccepted'
+                : 'lockDenied';
+        }
+        
+        if (!!this._timerId) {
+            this._resetDeferred();
+        }
 
-    tryLock() {
-        this._setTransitionProp('default');
-        this._setStyles('tryLock');
+        this._innerDiv.innerHTML = this._lockStatus[typeHandler];
+        this._setClass(this._labelStyle[typeHandler], this._innerDiv, this._labelStyle);
+
         this._showPopup();
     }
-
-    acceptLock() {
-        this._setTransitionProp('changeLabelStyle');
-        this._setStyles('lockAccepted');
-
-        setTimeout(this._hide, 2000);
-    }
-
-    denyLock() {
-        this._setTransitionProp('changeLabelStyle');
-        this._setStyles('lockDenied');
-
-        setTimeout(this._hide, 2000);
-    }
-}
+};
 
 export default Popup;
