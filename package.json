@@ -4,7 +4,8 @@
   "description": "ingipro.com practice 2017",
   "main": "index.js",
   "dependencies": {
-    "express": "4.15.3"
+    "express": "4.15.3",
+    "voximplant-websdk": "4.1.887"
   },
   "devDependencies": {
     "assets-webpack-plugin": "3.5.1",
