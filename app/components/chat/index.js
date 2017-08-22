@@ -5,24 +5,24 @@ class Chat {
     constructor(domNode) {
         this._domNode = domNode;
 
-        this.userName = 'testName'; //TODO get user name
-
-        this._text = this._domNode.createElement('div');
+        this._text = document.createElement('div');
         this._domNode.appendChild(this._text);
 
-        this._form = this._domNode.createElement('form');
-        this._form.onsubmit = this._send;
+        this._form = document.createElement('form');
         this._domNode.appendChild(this._form);
 
-        this._input = this._domNode.createElement('input');
+        this._input = document.createElement('input');
         this._input.type = 'text';
-        this._input.id = 'input';
+        this._input.value = '';
         this._form.appendChild(this._input);
 
-        this._submit = this._domNode.createElement('submit');
+        this._submit = document.createElement('input');
+		this._submit.type = 'submit';
+		this._submit.value = 'submit';
+		this._submit.addEventListener('click', this._send.bind(this));
         this._form.appendChild(this._submit);
 
-        this._send.bind(this);
+        mediator.on('conference:sync', this._getUserName.bind(this));
         mediator.on('chat:message', this._addMessage.bind(this));
     }
 
@@ -34,32 +34,42 @@ class Chat {
         this._domNode.classList.remove('hide');
     }
 
-    _addMessage(item) {
-        const newMessage = this._domNode.createElement('div');
+    _addMessage(payload) {
+        const newMessage = document.createElement('div');
         newMessage.className = 'message';
         this._text.appendChild(newMessage);
 
-        const userName = this._domNode.createElement('div');
-        userName.innerHTML = '${item.userName}: ';
+        const userName = document.createElement('span');
+        userName.innerHTML = `${payload.userName}: `;
         newMessage.appendChild(userName);
 
-        const time = this._domNode.createElement('div');
-        time.innerHTML = '${new Date.toLocaleString()}: ';
+        const time = document.createElement('span');
+        const date = new Date;
+        time.innerHTML = `${date.toLocaleString()}: `;
         newMessage.appendChild(time);
 
-        const message = this._domNode.createElement('div');
-        message.innerHTML = item.message;
+        const message = document.createElement('span');
+        message.innerHTML = payload.message;
         newMessage.appendChild(message);
     }
 
-    _send() {
-        const input = this._domNode.getElementById('input');
-        const message = {};
-        message.userName = this.userName;
-        message.message = input.value;
-        mediator.emit('chat:message', message);
-        input.value = '';
+    _send(event) {
+        event.preventDefault();
+        
+        if (this._input.value === '') {
+            return;
+        }
+        
+        const payload = {};
+        payload.userName = this.userName;
+        payload.message = this._input.value;
+        mediator.emit('chat:message', payload);
+        this._input.value = '';
     }
+    	
+	_getUserName(obj) {
+		this.userName = obj.userList[obj.userList.length - 1].name;
+	}
 }
 
 export default Chat;
