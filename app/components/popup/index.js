@@ -1,28 +1,31 @@
 import mediator from '../mediator';
+import './style.css';
+
+const SHOW_DURATION = 2000;
+const POPUP_SHOW_STYLE = 'popup-show';
+
+const LOCK_STATUS = {
+    tryLock: 'Попытка захвата управления...',
+    lockAccepted: 'Успешный захват управления!',
+    lockDenied: 'Захват управления не удался!',
+};
+
+const LABEL_STYLE = {
+    tryLock: 'popup-try-lock',
+    lockAccepted: 'popup-lock-accepted',
+    lockDenied: 'popup-lock-denied',
+};
 
 class Popup {
 
-    constructor(domNode, userName) {
-        this._domNode = domNode;
-        this._innerDiv = domNode.querySelector('.popup-background');
-        this._userName = userName;
-        this._showDuration = 2000;
-        this._popupShowStyle = 'popup-show';
+    constructor(domNode) {
+        //parse .popup-locker 'div's
+        this._domNodes = Array.from(domNode);
 
-        this._lockStatus = {
-            tryLock: '<p class="popup-label">' + this._userName
-                + ': захват управления...</p>',
-            lockAccepted: '<p class="popup-label">Успешный захват'
-                + 'управления!</p>',
-            lockDenied: '<p class="popup-label">Захват управления не'
-                + ' удался!</p>',
-        };
-
-        this._labelStyle = {
-            tryLock: 'popup-try-lock',
-            lockAccepted: 'popup-lock-accepted',
-            lockDenied: 'popup-lock-denied',
-        };
+        //parse .popup-label 'p's into .popup-locker 'div's
+        this._innerPs = this._domNodes.map((currVal) => {
+            return currVal.querySelector('.popup-label');
+        });
 
         this._timerId = null;
 
@@ -30,6 +33,8 @@ class Popup {
 
         mediator.on('canvas:lock', this.lockStatusHandler.bind(this));
         mediator.on('lock:*', this.lockStatusHandler.bind(this));
+        mediator.on('conference:lock', this.showActiveLocker.bind(this));
+        mediator.on('conference:unlock', this.showActiveLocker.bind(this));
     }
 
     _resetDeferred() {
@@ -53,33 +58,47 @@ class Popup {
     }
 
     _showPopup() {
-        this._domNode.classList.add(this._popupShowStyle);
-        this._timerId = setTimeout(this._hide, this._showDuration);
+        this._domNodes[0].classList.add(POPUP_SHOW_STYLE);
+        this._timerId = setTimeout(this._hide, SHOW_DURATION);
     }
 
     _hidePopup() {
-        this._domNode.classList.remove(this._popupShowStyle);
+        this._domNodes[0].classList.remove(POPUP_SHOW_STYLE);
         this._resetDeferred();
     }
-    
+
     lockStatusHandler(data, type) {
-    	const parsedType = type.split(':');
+        const parsedType = type.split(':');
         let typeHandler = 'tryLock';
-        
-        //if event type name is 'lock:[accept/denied]'
+
+        //if event type name is not 'canvas:lock' (but 'lock:[accept/denied]')
         if (parsedType[0] !== 'canvas') {
-            typeHandler = (parsedType[1] === 'accept') ? 'lockAccepted'
-                : 'lockDenied';
+            typeHandler = (parsedType[1] === 'accept') ? 'lockAccepted' :
+                'lockDenied';
         }
-        
+
         if (!!this._timerId) {
             this._resetDeferred();
         }
 
-        this._innerDiv.innerHTML = this._lockStatus[typeHandler];
-        this._setClass(this._labelStyle[typeHandler], this._innerDiv, this._labelStyle);
+        this._innerPs[0].innerHTML = LOCK_STATUS[typeHandler];
+        this._setClass(LABEL_STYLE[typeHandler], this._domNodes[0],
+            LABEL_STYLE);
 
         this._showPopup();
+    }
+
+    showActiveLocker(data, type) {
+        let status;
+        let eventType = type.split(':')[1];
+
+        if (eventType === 'lock') {
+            status = 'Управление: ' + data.login;
+        } else {
+            status = 'Управление доступно для захвата';
+        }
+
+        this._innerPs[1].innerHTML = status;
     }
 };
 
