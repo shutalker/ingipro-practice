@@ -93,7 +93,7 @@ class Popup {
         let eventType = type.split(':')[1];
 
         if (eventType === 'lock') {
-            status = 'Управление: ' + data.login;
+            status = 'Управление: ' + data.name;
         } else {
             status = 'Управление доступно для захвата';
         }
