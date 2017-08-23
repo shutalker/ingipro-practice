@@ -1,4 +1,3 @@
-import VoxImplant from 'voximplant-websdk';
 
 
 class Voice {
