@@ -1,21 +1,17 @@
-
+import mediator from '../mediator';
 
 class Voice {
     constructor() {
-        this.userId = 1;
-        this.userName = 'test';
-
+        //console.log('Voice constructor work!');
         this.vox = VoxImplant.getInstance();
         this.vox.addEventListener(VoxImplant.Events.SDKReady, this._handleSDKReady);
-        this.vox.addEventListener(VoxImplant.Events.ConnectionEstablished, this._handleConnectionEstablished);
+        this.vox.addEventListener(VoxImplant.Events.ConnectionEstablished, this._handleConnectionEstablished.bind(this));
         this.vox.addEventListener(VoxImplant.Events.ConnectionFailed, this._handleConnectionFailed);
-        this.vox.addEventListener(VoxImplant.Events.ConnectionClosed, this._handleConnectionClosed);
-        this.vox.addEventListener(VoxImplant.Events.AuthResult, this._handleAuthResult);
+        this.vox.addEventListener(VoxImplant.Events.ConnectionClosed, this._handleConnectionClosed.bind(this));
+        this.vox.addEventListener(VoxImplant.Events.AuthResult, this._handleAuthResult.bind(this));
 
-        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-            console.error('enumerateDevices() not supported.');
-            //return new Promise(resolve => resolve(mediaDevicesSettings));
-        }
+
+        console.log('Voice constructor work!');
 
         navigator.mediaDevices.getUserMedia({audio: true})
             .then(() => navigator.mediaDevices.enumerateDevices())
@@ -31,6 +27,7 @@ class Voice {
             }))
             .then(() => this.vox.connect())
             .catch(e => console.log(e.message || e.name));
+
     }
 
     _handleSDKReady() {
@@ -43,9 +40,8 @@ class Voice {
         const USER_PASS = 'foruser1';
         const ACCOUNT_NAME = 'dovyden';
         const APP_NAME = 'ingipro-practice';
-
         if (typeof console !== 'undefined') {
-            console.log(`Connected to VoxImplant:${ this.vox.connected()}`);
+            console.log(`Connected to VoxImplant: ${this.vox.connected()}`);
         }
         this.vox.login(`${USER_NAME}@${APP_NAME}.${ACCOUNT_NAME}.voximplant.com`, USER_PASS);
     }
@@ -63,20 +59,23 @@ class Voice {
         if (typeof console !== 'undefined') {
             console.log(`Authorized to VoxImplant:${ e.result } ${ (e.result) ? '' : e.code}`);
         }
-        if (e.result) {
-            this.currentCall = this.vox.call({
-                number: 'entrypoint',
-                video: false,
-                extraHeaders: {
-                    'X-User-Id': this.userId, // some user id
-                    'X-User-Name': this.userName, // dovyden
-                },
-            });
-            this.currentCall.addEventListener(VoxImplant.CallEvents.Connected, this._onCallConnected);
-            this.currentCall.addEventListener(VoxImplant.CallEvents.Failed, this._onCallFailed);
-            this.currentCall.addEventListener(VoxImplant.CallEvents.Disconnected, this._onCallDisconnected);
-            //call.addEventListener(VoxImplant.CallEvents.MessageReceived, this._onCallMessage);
-        }
+        mediator.on('user:join', this._handleUserJoin.bind(this));
+    }
+    _handleUserJoin(event) {
+        this.userName = event.payload.name;
+        this.userId = event.payload.name + Date.now();
+
+        this.currentCall = this.vox.call({
+            number: 'entrypoint',
+            video: false,
+            extraHeaders: {
+                'X-User-Id': this.userId, // some user id
+                'X-User-Name': this.userName, // dovyden
+            },
+        });
+        this.currentCall.addEventListener(VoxImplant.CallEvents.Connected, this._onCallConnected);
+        this.currentCall.addEventListener(VoxImplant.CallEvents.Failed, this._onCallFailed);
+        this.currentCall.addEventListener(VoxImplant.CallEvents.Disconnected, this._onCallDisconnected);
     }
     _onCallConnected() {
         if (typeof console !== 'undefined') {
