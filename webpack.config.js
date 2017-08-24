@@ -20,7 +20,7 @@ function getConfig(env) {
         output: {
             filename: isDevelopment ? 'build.js' : 'build.min.js',
             path: `${__dirname}/build`,
-            publicPath: '/',
+            publicPath: './',
             pathinfo: isDevelopment,
         },
         resolve: {
