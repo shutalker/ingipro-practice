@@ -20,7 +20,7 @@ class Login {
         const value = this._domNode.querySelector('.js-input').value;
 
         if (value) {
-            mediator.emit("conference:join", value);
+            mediator.emit("user:join", { 'name': value });
         }  
     }
 }
