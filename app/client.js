@@ -4,6 +4,7 @@ import Users from 'components/users';
 import mediator from 'components/mediator'; // instance of component
 import Popup from 'components/popup';
 import 'components/store';
+import 'components/voice';
 import 'components/websocket';
 
 // create instanses of ui components
