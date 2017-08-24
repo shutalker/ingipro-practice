@@ -17,9 +17,13 @@ const chat = new Chat(document.querySelector('.chat'));
 login.show();
 
 // wait to login
-mediator.on('user:logged', () => {
+mediator.on('conference:sync', () => {
     login.hide();
     layout.show();
     users.show();
     chat.show();
+});
+
+mediator.on('*', (data, type) => {
+    console.info(`Event type: ${type}, data: ${data}`);
 });
