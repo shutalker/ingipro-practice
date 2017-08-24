@@ -29,7 +29,7 @@ class Mediator {
     }
 
     emit(type, data) {
-        let sliceChar = type.slice( 0, type.indexOf(':') ) + ': *';
+        let sliceChar = type.slice( 0, type.indexOf(':') ) + ':*';
 
         if ( this._listeners[sliceChar] ) {
             this._listeners[sliceChar].forEach( listener => listener.call(null, data, type) );
@@ -41,7 +41,7 @@ class Mediator {
 
         if (this._listeners[type]) {
             this._listeners[type].forEach( listener => listener.call(null, data, type) );
-        } 
+        }
     }
 }
 
