@@ -49,6 +49,9 @@ module.exports = function (server) {
                             type: 'conference:unlock',
                         });
                         break;
+                    case 'chat:message':
+                        socket.broadcast.emit('main', {type: payload});
+                        break;
                     default:
                         if (store.addData(type, payload)) {
                             socket.broadcast.emit('main', {type: payload});
