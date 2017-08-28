@@ -1,4 +1,5 @@
 import Marks from '../marks';
+import mediator from '../mediator';
 // import Viewer from '../viewer';
 import './style.css';
 
@@ -12,6 +13,7 @@ class Layout {
         this._domNode = domNode;
 
         document.addEventListener("click", this._changeLayout.bind(this), false);
+        // mediator.on('layout:change', this._restoreLayout.bind(this));
     }
 
     hide() {
@@ -29,7 +31,8 @@ class Layout {
         this._MARGIN = 25;
         this._LINE_SIZE = 10;
         this._CHAT_SIZE = 250;
-        this._MINSIZE = 10;        // min size (%) of tape for deleting
+        this._MINSIZE = 10;         // min size (%) of tape for creating
+                                    // min size/2 (%) of tape for deleting
         this._tapes = [];           // store for tapes, lines and cells
 
         this._createTapeBackground();
@@ -53,9 +56,7 @@ class Layout {
         };
 
         this._tapes[0].elem.style.margin = this._MARGIN + "px";
-
-        this._tapes[0].ratio = this._tapes[0].elem.clientWidth / this._tapes[0].elem.clientHeight;
-        this._tapes[0].addForLines = 2 * this._LINE_SIZE / this._tapes[0].elem.clientWidth * 100;
+        this._addForLines = 2 * this._LINE_SIZE / this._tapes[0].elem.clientWidth * 100;
     }
     _createTapeBorder () {
         for (let i = 1; i < 5; i++) {
@@ -64,26 +65,26 @@ class Layout {
 
             switch (i - 1) {
                 case 0:
-                    elem.className = "line top";
+                    elem.className = "external line tapeLine top";
                     elem.style.top = - this._LINE_SIZE + "px";
                     elem.style.left = - this._LINE_SIZE + "px";
                     elem.style.height = this._LINE_SIZE + "px";
-                    elem.style.width = 100 + this._tapes[0].addForLines + "%";
+                    elem.style.width = 100 + this._addForLines + "%";
                     break;
                 case 1:
-                    elem.className = "line left";
+                    elem.className = "external line tapeLine left";
                     elem.style.left = - this._LINE_SIZE + "px";
                     elem.style.width = this._LINE_SIZE + "px";
                     break;
                 case 2:
-                    elem.className = "line bot";
+                    elem.className = "external line tapeLine bot";
                     elem.style.top = "100%";
                     elem.style.left = - this._LINE_SIZE + "px";
                     elem.style.height = this._LINE_SIZE + "px";
-                    elem.style.width = 100 + this._tapes[0].addForLines + "%";
+                    elem.style.width = 100 + this._addForLines + "%";
                     break;
                 case 3:
-                    elem.className = "line right";
+                    elem.className = "external line tapeLine right";
                     elem.style.left = "100%";
                     elem.style.width = this._LINE_SIZE + "px";
                     break;
@@ -108,6 +109,7 @@ class Layout {
         this._tapes[id] = {};
         this._tapes[id].elem = document.createElement('div');
         this._tapes[id].elem.className = "tape";
+
         this._tapes[id].elem.id = id;
         this._tapes[0].currentTapeId = id;
 
@@ -148,26 +150,26 @@ class Layout {
 
             switch (i - 1) {
                 case 0:
-                    elem.className = "cellLine top";
+                    elem.className = "external line cellLine top";
                     elem.style.top = "0%";
                     elem.style.left = "0%";
                     elem.style.height = this._LINE_SIZE + "px";
                     elem.style.width = "100%";
                     break;
                 case 1:
-                    elem.className = "cellLine left";
+                    elem.className = "external line cellLine left";
                     elem.style.left = "0%";
                     elem.style.width = this._LINE_SIZE + "px";
                     break;
                 case 2:
-                    elem.className = "cellLine bot";
+                    elem.className = "external line cellLine bot";
                     elem.style.bottom = "0%";
                     elem.style.left = "0%";
                     elem.style.height = this._LINE_SIZE + "px";
                     elem.style.width = "100%";
                     break;
                 case 3:
-                    elem.className = "cellLine right";
+                    elem.className = "external line cellLine right";
                     elem.style.right = "0%";
                     elem.style.width = this._LINE_SIZE + "px";
                     break;
@@ -233,23 +235,16 @@ class Layout {
         if (e.which !== 1) return;
         let line = {};
 
-        line.elem = e.target.closest(".line");
+        line.elem = e.target.closest(".tapeLine");
         if (!line.elem) {
-            line.elem = e.target.closest(".internalLine");
-        }
-        if (line.elem) {
-            line = this._tapes[line.elem.id];
-        } else {
             line.elem = e.target.closest(".cellLine");
-            if (!line.elem) {
-                line.elem = e.target.closest(".internalCellLine");
-            }
             if (line.elem) {
                 line = this._tapes[line.elem.tapeId][line.elem.id];
             } else {
-                line.elem = e.target.closest(".cellLine");
                 return;
             }
+        } else {
+            line = this._tapes[line.elem.id];
         }
 
         switch (line.status) {
@@ -303,8 +298,8 @@ class Layout {
         const cellId = this._tapes[parentId][0].currentCellId;
 
         switch (this._external.elem.className) {
-            case "cellLine left":
-            case "cellLine right":
+            case "external line cellLine left":
+            case "external line cellLine right":
                 this._tapes[1].nextId = this._tapes[parentId].elem.id;
                 this._tapes[3].previousId = this._tapes[parentId].elem.id;
 
@@ -312,7 +307,6 @@ class Layout {
                 this._tapes[parentId].previousId = this._tapes[1].elem.id;
 
                 this._tapes[0].elem.style.flexDirection = "column";
-                this._minSizeTape = this._MINSIZE;
 
                 this._tapes[parentId][2].nextId = this._tapes[parentId][cellId].elem.id;
                 this._tapes[parentId][4].previousId = this._tapes[parentId][cellId].elem.id;
@@ -321,7 +315,6 @@ class Layout {
                 this._tapes[parentId][cellId].previousId = this._tapes[parentId][2].elem.id;
 
                 this._tapes[parentId][0].elem.style.flexDirection = "row";
-                this._minSizeCell = this._MINSIZE / this._tapes[0].ratio;
                 break;
             default:
                 this._tapes[2].nextId = this._tapes[parentId].elem.id;
@@ -331,7 +324,6 @@ class Layout {
                 this._tapes[parentId].previousId = this._tapes[2].elem.id;
 
                 this._tapes[0].elem.style.flexDirection = "row";
-                this._minSizeTape = this._MINSIZE / this._tapes[0].ratio;
 
                 this._tapes[parentId][1].nextId = this._tapes[parentId][cellId].elem.id;
                 this._tapes[parentId][3].previousId = this._tapes[parentId][cellId].elem.id;
@@ -340,15 +332,14 @@ class Layout {
                 this._tapes[parentId][cellId].previousId = this._tapes[parentId][1].elem.id;
 
                 this._tapes[parentId][0].elem.style.flexDirection = "column";
-                this._minSizeCell = this._MINSIZE;
         }
     }
     _setTapesDirection () {
         const parentId = this._tapes[0].currentTapeId;
 
         switch (this._external.elem.className) {
-            case "line top":
-            case "line bot":
+            case "external line tapeLine top":
+            case "external line tapeLine bot":
                 this._tapes[1].nextId = this._tapes[parentId].elem.id;
                 this._tapes[3].previousId = this._tapes[parentId].elem.id;
 
@@ -356,7 +347,6 @@ class Layout {
                 this._tapes[parentId].previousId = this._tapes[1].elem.id;
 
                 this._tapes[0].elem.style.flexDirection = "column";
-                this._minSizeTape = this._MINSIZE;
                 break;
             default:
                 this._tapes[2].nextId = this._tapes[parentId].elem.id;
@@ -366,7 +356,6 @@ class Layout {
                 this._tapes[parentId].previousId = this._tapes[2].elem.id;
 
                 this._tapes[0].elem.style.flexDirection = "row";
-                this._minSizeTape = this._MINSIZE / this._tapes[0].ratio;
         }
     }
     _setCellsDirection () {
@@ -382,7 +371,6 @@ class Layout {
                 this._tapes[parentId][cellId].previousId = this._tapes[parentId][2].elem.id;
 
                 this._tapes[parentId][0].elem.style.flexDirection = "row";
-                this._minSizeCell = this._MINSIZE / this._tapes[0].ratio;
                 break;
             default:
                 this._tapes[parentId][1].nextId = this._tapes[parentId][cellId].elem.id;
@@ -392,7 +380,6 @@ class Layout {
                 this._tapes[parentId][cellId].previousId = this._tapes[parentId][1].elem.id;
 
                 this._tapes[parentId][0].elem.style.flexDirection = "column";
-                this._minSizeCell = this._MINSIZE;
         }
     }
     _closeStatusExternal () {
@@ -419,8 +406,6 @@ class Layout {
     }
 
     _createTape () {
-        this._tapes[0].ratio = this._tapes[0].elem.clientWidth / this._tapes[0].elem.clientHeight;
-
         this._createInternalTapeLine ();
         this._createNewTape();
 
@@ -446,7 +431,7 @@ class Layout {
 
         this._tapes[id] = {};
         this._tapes[id].elem = document.createElement('div');
-        this._tapes[id].elem.className = "internalLine";
+        this._tapes[id].elem.className = "line tapeLine";
         this._tapes[id].status = "resizeTape";
         this._tapes[id].elem.id = id;
 
@@ -471,8 +456,7 @@ class Layout {
 
         this._tapes[parentId][id] = {};
         this._tapes[parentId][id].elem = document.createElement('div');
-
-        this._tapes[parentId][id].elem.className = "internalCellLine";
+        this._tapes[parentId][id].elem.className = "line cellLine";
         this._tapes[parentId][id].status = "resizeCell";
         this._tapes[parentId][id].elem.id = id;
         this._tapes[parentId][id].elem.tapeId = parentId;
@@ -495,10 +479,10 @@ class Layout {
         const id = this._tapes[parentId][0].lastCellId;
 
         switch (this._external.elem.className) {
-            case "line top":
-            case "line left":
-            case "cellLine top":
-            case "cellLine left":
+            case "external line tapeLine top":
+            case "external line tapeLine left":
+            case "external line cellLine top":
+            case "external line cellLine left":
                 if (this._external.status === "createTape") {
                     this._next = this._tapes[this._external.nextId];
                     this._previous = this._tapes[parentId];
@@ -573,7 +557,7 @@ class Layout {
         let coordinate = this._takeCoordinate (e);
 
         if (!this._isEmpty(this._external)) {
-            if (coordinate < this._minSizeTape || coordinate > 100 - this._minSizeTape) {
+            if (coordinate < this._MINSIZE || coordinate > 100 - this._MINSIZE) {
                 return false;
             }
             this._createTape ();
@@ -587,12 +571,12 @@ class Layout {
 
         this._setNewSizes.bind(this)(coordinate);
 
-        if (parseFloat(this._next.elem.style.flexBasis) < this._minSizeTape / 2) {
+        if (parseFloat(this._next.elem.style.flexBasis) < this._MINSIZE / 2) {
             this._deleteNext (e);
             return false;
         }
 
-        if (parseFloat(this._previous.elem.style.flexBasis) < this._minSizeTape / 2) {
+        if (parseFloat(this._previous.elem.style.flexBasis) < this._MINSIZE / 2) {
             this._deletePrevious (e);
             return false;
         }
@@ -604,7 +588,7 @@ class Layout {
         let coordinate = this._takeCoordinateCell (e);
 
         if (!this._isEmpty(this._external)) {
-            if (coordinate < this._minSizeCell || coordinate > 100 - this._minSizeCell) {
+            if (coordinate < this._MINSIZE || coordinate > 100 - this._MINSIZE) {
                 return false;
             }
             this._createCell ();
@@ -618,12 +602,12 @@ class Layout {
 
         this._setNewSizes.bind(this)(coordinate);
 
-        if (parseFloat(this._next.elem.style.flexBasis) < this._minSizeCell / 2) {
+        if (parseFloat(this._next.elem.style.flexBasis) < this._MINSIZE / 2) {
             this._deleteNextCell (e);
             return;
         }
 
-        if (parseFloat(this._previous.elem.style.flexBasis) < this._minSizeCell / 2) {
+        if (parseFloat(this._previous.elem.style.flexBasis) < this._MINSIZE / 2) {
             this._deletePreviousCell (e);
             return;
         }
@@ -889,10 +873,10 @@ class Layout {
     }
 
     _onResize() {
-        this._tapes[0].addForLines = 2 * 10/this._tapes[0].elem.clientWidth * 100;
+        this._addForLines = 2 * 10/this._tapes[0].elem.clientWidth * 100;
 
-        this._tapes[1].elem.style.width = 100 + this._tapes[0].addForLines + "%";
-        this._tapes[3].elem.style.width = 100 + this._tapes[0].addForLines + "%";
+        this._tapes[1].elem.style.width = 100 + this._addForLines + "%";
+        this._tapes[3].elem.style.width = 100 + this._addForLines + "%";
     }
 
     _throttle(func, ms) {
@@ -928,67 +912,55 @@ class Layout {
     // _serializeAll () {
     //     let copy = [];
     //
-    //     for (let i = 0; i < 5; i++) {
-    //         console.log(i);
-    //         console.log(this._tapes[i].elem.id);
-    //         for (let parentKey in this._tapes[i]) {
-    //             console.log(this._tapes[i][parentKey]);
-    //             if (parentKey == "elem") {
-    //                 copy[i][parentKey] = this._tapes[i][parentKey];
-    //             } else {
-    //                 copy[i].elem.id = this._tapes[i].elem.id;
-    //             }
-    //         }
-    //     }
-    //
-    //     for (let i = 5; i < this._tapes.length; i++) {
-    //         for (let parentKey in this._tapes[i]) {
-    //             if (parentKey !== "elem") {
+    //     for (let i = 0; i < this._tapes.length; i++) {
+    //         if (!this._isEmpty(this._tapes[i])) {
+    //             copy[i] = {};
+    //             for (let parentKey in this._tapes[i]) {
     //                 if (isNaN(parentKey)) {
-    //                     copy[i][parentKey] = this._tapes[i][parentKey];
+    //                     if (parentKey !== "elem") {
+    //                         copy[i][parentKey] = this._tapes[i][parentKey];
+    //                     } else {
+    //                         copy[i].elem = {};
+    //                         copy[i].elem.id = this._tapes[i].elem.id;
+    //                         if (i === 0) {
+    //                             copy[i].elem.flexDirection = this._tapes[i].elem.style.flexDirection;
+    //                         }
+    //                         if (i > 4) {
+    //                             copy[i].elem.flexBasis = this._tapes[i].elem.style.flexBasis;
+    //                             copy[i].elem.order = this._tapes[i].elem.style.order;
+    //                         }
+    //                     }
     //                 } else {
+    //                     copy[i][parentKey] = {};
     //                     for (let key in this._tapes[i][parentKey]) {
     //                         if (key !== "elem") {
     //                             copy[i][parentKey][key] = this._tapes[i][parentKey][key];
     //                         } else {
+    //                             copy[i][parentKey].elem = {};
     //                             copy[i][parentKey].elem.id = this._tapes[i][parentKey].elem.id;
     //                             copy[i][parentKey].elem.tapeId = this._tapes[i][parentKey].elem.tapeId;
-    //                             if (key > 4) {
-    //                                 copy[i][parentKey].elem.style.flexBasis = this._tapes[i][parentKey].elem.style.flexBasis;
-    //                                 copy[i][parentKey].elem.style.order = this._tapes[i][parentKey].elem.style.order;
+    //                             if (parentKey === "0") {
+    //                                 copy[i][parentKey].elem.flexDirection = this._tapes[i][parentKey].elem.style.flexDirection;
+    //                             }
+    //                             if (parentKey > 4) {
+    //                                 copy[i][parentKey].elem.flexBasis = this._tapes[i][parentKey].elem.style.flexBasis;
+    //                                 copy[i][parentKey].elem.order = this._tapes[i][parentKey].elem.style.order;
     //                             }
     //                         }
     //                     }
     //                 }
-    //             } else {
-    //                 copy[i].elem.id = this._tapes[i].elem.id;
-    //                 copy[i].elem.style.flexBasis = this._tapes[i][parentKey].elem.style.flexBasis;
-    //                 copy[i].elem.style.order = this._tapes[i][parentKey].elem.style.order;
-    //             }
-    //         }
-    //     }
-    // }
-
-    // _restoreLayout() {
-    //     const this._tapes = this._this._tapes;
-    //
-    //     document.body.appendChild(this._tapes[0].elem);
-    //
-    //     for (let i = 1; i < this._tapes[0].lastTapeId; i++) {
-    //         if (this._tapes[i].view) {
-    //             this._tapes[0].elem.appendChild(this._tapes[i].elem);
-    //             this._tapes[i].elem.appendChild(this._tapes[i][0].elem);
-    //
-    //             for (let j = 1; i < this._tapes[i][0].lastCellId; j++) {
-    //                 if (this._tapes[i][j].view) {
-    //                     this._tapes[i][0].elem.appendChild(this._tapes[i][j].elem);
-    //                 }
     //             }
     //         }
     //     }
     //
+    //     const payload = {};
+    //     payload.layout = copy;
+    //     mediator.emit('layout:change', payload);
     // }
-
+    //
+    // _restoreLayout (payload) {
+    //     console.log(payload);
+    // }
 }
 
 export default Layout;
