@@ -18,7 +18,7 @@
 </head>
 <body>
 
-<div id="bye" style="position:absolute;left:1200px;top:280px;width:200px;height:200px;"><strong>This element will deleted</strong></div>
+<!--<div id="bye" style="position:absolute;left:1200px;top:280px;width:200px;height:200px;"><strong>This element will deleted</strong></div>-->
 
 <script src="https://threejs.org/build/three.js"></script>  <!--main library-->
 <script src="https://threejs.org/examples/js/controls/TrackballControls.js"></script> <!--zoom-->
@@ -27,18 +27,18 @@
 <script src="prototype.js"></script>
 
 <script>
-//    let a = new module3d(0,window.innerWidth,window.innerHeight,0,0);
-    let example = new module3d(0,200,200,400,300);
+    let a = new Module3d(0,window.innerWidth,window.innerHeight,0,0);
+//    let example = new Module3d(0,400,400,0,0);
+//
+//    let example1 = new Module3d(1,400,400,800,300);
 
-    let example1 = new module3d(1,200,200,800,300);
-
-    let example2 = new module3d(1,200,200,1200,300);
+    /*let example2 = new Module3d(1,200,200,1200,300);
 
     setTimeout( ()=> {
         example2.destructor();
         let div = document.getElementById("bye");
         document.getElementsByTagName('body')[0].removeChild(div);
-        },10000);
+        },10000);*/
 
 </script>
 
