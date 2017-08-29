@@ -13,7 +13,8 @@ class Layout {
         this._domNode = domNode;
 
         document.addEventListener("click", this._changeLayout.bind(this), false);
-        // mediator.on('layout:change', this._restoreLayout.bind(this));
+        mediator.on('layout:change', this._handleLayout.bind(this));
+        mediator.on('conference:sync', this._getUser.bind(this));
     }
 
     hide() {
@@ -22,7 +23,6 @@ class Layout {
 
     show() {
         this._domNode.classList.remove('hide');
-
         setTimeout(this._createLayout.bind(this), 20);
     }
 
@@ -213,7 +213,8 @@ class Layout {
             this._tapes[parentId][id].lastFlexBasis = 0;
         }
 
-        this._tapes[parentId][id].marks = new Marks(this._tapes[parentId][id].elem, "#000000");
+        this._marks = new Marks(this._user, this._tapes[parentId][id]);
+        this._tapes[parentId][id].svg = this._marks.svg;
     }
 
     _changeLayout () {
@@ -854,7 +855,7 @@ class Layout {
             this._previous.lastFlexBasis = parseFloat(this._previous.elem.style.flexBasis);
         }
 
-        // setTimeout( this._serializeAll.bind(this), 20);
+        // setTimeout( this._serializeLayout.bind(this), 20);
 
         this._next = {};
         this._previous = {};
@@ -909,58 +910,148 @@ class Layout {
         return wrapper;
     }
 
-    // _serializeAll () {
-    //     let copy = [];
-    //
-    //     for (let i = 0; i < this._tapes.length; i++) {
-    //         if (!this._isEmpty(this._tapes[i])) {
-    //             copy[i] = {};
-    //             for (let parentKey in this._tapes[i]) {
-    //                 if (isNaN(parentKey)) {
-    //                     if (parentKey !== "elem") {
-    //                         copy[i][parentKey] = this._tapes[i][parentKey];
-    //                     } else {
-    //                         copy[i].elem = {};
-    //                         copy[i].elem.id = this._tapes[i].elem.id;
-    //                         if (i === 0) {
-    //                             copy[i].elem.flexDirection = this._tapes[i].elem.style.flexDirection;
-    //                         }
-    //                         if (i > 4) {
-    //                             copy[i].elem.flexBasis = this._tapes[i].elem.style.flexBasis;
-    //                             copy[i].elem.order = this._tapes[i].elem.style.order;
-    //                         }
-    //                     }
-    //                 } else {
-    //                     copy[i][parentKey] = {};
-    //                     for (let key in this._tapes[i][parentKey]) {
-    //                         if (key !== "elem") {
-    //                             copy[i][parentKey][key] = this._tapes[i][parentKey][key];
-    //                         } else {
-    //                             copy[i][parentKey].elem = {};
-    //                             copy[i][parentKey].elem.id = this._tapes[i][parentKey].elem.id;
-    //                             copy[i][parentKey].elem.tapeId = this._tapes[i][parentKey].elem.tapeId;
-    //                             if (parentKey === "0") {
-    //                                 copy[i][parentKey].elem.flexDirection = this._tapes[i][parentKey].elem.style.flexDirection;
-    //                             }
-    //                             if (parentKey > 4) {
-    //                                 copy[i][parentKey].elem.flexBasis = this._tapes[i][parentKey].elem.style.flexBasis;
-    //                                 copy[i][parentKey].elem.order = this._tapes[i][parentKey].elem.style.order;
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    //
-    //     const payload = {};
-    //     payload.layout = copy;
-    //     mediator.emit('layout:change', payload);
-    // }
-    //
-    // _restoreLayout (payload) {
-    //     console.log(payload);
-    // }
+    _getUser (payload) {
+        this._user = {
+            userId: payload.userList[payload.userList.length-1].userId,
+            name: payload.userList[payload.userList.length-1].name,
+            color: payload.userList[payload.userList.length-1].color,
+        };
+    }
+
+    _serializeLayout () {
+        const copy = [];
+
+        for (let i = 0; i < this._tapes.length; i++) {
+            if (!this._isEmpty(this._tapes[i])) {
+                copy[i] = {};
+                for (let parentKey in this._tapes[i]) {
+                    if (isNaN(parentKey)) {
+                        if (parentKey !== "elem") {
+                            copy[i][parentKey] = this._tapes[i][parentKey];
+                        } else {
+                            copy[i].elem = {};
+                            copy[i].elem.id = this._tapes[i].elem.id;
+                            if (i === 0) {
+                                copy[i].elem.flexDirection = this._tapes[i].elem.style.flexDirection;
+                            }
+                            if (i > 4) {
+                                copy[i].elem.flexBasis = this._tapes[i].elem.style.flexBasis;
+                                copy[i].elem.order = this._tapes[i].elem.style.order;
+                            }
+                        }
+                    } else {
+                        copy[i][parentKey] = {};
+                        for (let key in this._tapes[i][parentKey]) {
+                            if (key !== "elem") {
+                                // if (key === "svg") {
+                                //         copy[i][parentKey].svg = this._tapes[i][parentKey].svg.data;
+                                // } else {
+                                    copy[i][parentKey][key] = this._tapes[i][parentKey][key];
+                                // }
+                            } else {
+                                copy[i][parentKey].elem = {};
+                                copy[i][parentKey].elem.id = this._tapes[i][parentKey].elem.id;
+                                copy[i][parentKey].elem.tapeId = this._tapes[i][parentKey].elem.tapeId;
+                                if (parentKey === "0") {
+                                    copy[i][parentKey].elem.flexDirection = this._tapes[i][parentKey].elem.style.flexDirection;
+                                }
+                                if (parentKey > 4) {
+                                    copy[i][parentKey].elem.flexBasis = this._tapes[i][parentKey].elem.style.flexBasis;
+                                    copy[i][parentKey].elem.order = this._tapes[i][parentKey].elem.style.order;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        const payload = {
+            userId: this._user.userId,
+            layout: copy,
+        };
+        mediator.emit('layout:change', payload);
+    }
+
+    _handleLayout (payload) {
+        if (payload.userId !== this._user.userId && payload.layout) {
+            this._restoreLayout.bind(this)(payload);
+        }
+    }
+
+    _restoreLayout (payload) {
+        const copy2 = [];
+
+        for (let i = 0; i < payload.layout.length; i++) {
+            if (!this._isEmpty(payload.layout[i])) {
+                copy2[i] = {};
+                for (let parentKey in payload.layout[i]) {
+                    if (isNaN(parentKey)) {
+                        if (parentKey !== "elem") {
+                            copy2[i][parentKey] = payload.layout[i][parentKey];
+                        } else {
+                            if (i > 4) {
+                                copy2[i].elem = document.createElement('div');
+                                if (i % 2) {
+                                    copy2[i].elem.className = "tape";
+                                    this._createCellBackground();
+                                    this._createCellBorder();
+                                    this._createNewCell();
+                                } else {
+                                    copy2[i].elem.className = "line tapeLine";
+                                }
+                            } else {
+                                copy2[i].elem = this._tapes[i].elem;
+                            }
+                            copy2[i].elem.id = payload.layout[i].elem.id;
+                            if (i === 0) {
+                                copy2[i].elem.style.flexDirection = payload.layout[i].elem.flexDirection;
+                            }
+                            if (i > 4) {
+                                copy2[i].elem.style.flexBasis = payload.layout[i].elem.flexBasis;
+                                copy2[i].elem.style.order = payload.layout[i].elem.order;
+                            }
+                        }
+                    } else {
+                        copy2[i][parentKey] = {};
+                        for (let key in payload.layout[i][parentKey]) {
+                            if (key !== "elem") {
+                                // if (key === "svg") {
+                                //         copy[i][parentKey].svg = this._tapes[i][parentKey].svg.data;
+                                // } else {
+                                copy2[i][parentKey][key] = payload.layout[i][parentKey][key];
+                                // }
+                            } else {
+                                if (i > 4) {
+                                    copy2[i][parentKey].elem = document.createElement('div');
+                                    if (i % 2) {
+                                        copy2[i][parentKey].elem.className = "cell";
+                                    } else {
+                                        copy2[i][parentKey].elem.className = "line cellLine";
+                                    }
+                                } else {
+                                    copy2[i].elem = this._tapes[i][parentKey].elem;
+                                }
+                                copy2[i][parentKey].elem.id = payload.layout[i][parentKey].elem.id;
+                                copy2[i][parentKey].elem.tapeId = payload.layout[i][parentKey].elem.tapeId;
+                                if (parentKey === "0") {
+                                    copy2[i][parentKey].elem.style.flexDirection = payload.layout[i][parentKey].elem.flexDirection;
+                                }
+                                if (parentKey > 4) {
+                                    copy2[i][parentKey].elem.style.flexBasis = payload.layout[i][parentKey].elem.flexBasis;
+                                    copy2[i][parentKey].elem.style.order = payload.layout[i][parentKey].elem.order;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        console.log(this._tapes);
+        console.log(copy2);
+        console.log(payload.layout);
+    }
 }
 
 export default Layout;

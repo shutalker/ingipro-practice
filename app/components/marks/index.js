@@ -1,20 +1,25 @@
 import * as d3 from 'd3';
-// import mediator from '../mediator';
+import mediator from '../mediator';
 import './style.css';
 
 class Marks {
-    constructor(parent, color) {
+    constructor(user, parent) {
         document.addEventListener("keydown", this._onDownShiftPlusCtrl.bind(this), false);
         document.addEventListener("keyup", this._onUpShiftPlusCtrl.bind(this), false);
 
-        this.flag = false;
-        this.id = parent.globalId;
-        this._color = color;
-        this.domMark = d3.select(parent);
-        this.svg = this.domMark.append("svg")
+        // this.id = parent.globalId;
+        this._user = user;
+        this._flag = false;
+        this._countLines = 0;
+        this._color = this._user.color;
+
+        this._domMark = d3.select(parent.elem);
+        this.svg = this._domMark.append("svg")
         .on("mousedown", this.mousedown.bind(this))
         .style("width", "100%")
         .style("height", "100%");
+
+        this.svg.data = [];
 
         this.line = d3.line()
         .x(d => d[0])
@@ -23,7 +28,8 @@ class Marks {
         // this.metodChangeSVG = this.changeSVG.bind(this);
         // this.metodDrowNewLine = this.drowNewLine.bind(this);
         // this.metodDeleteAll = this.deleteAll.bind(this);
-        // mediator.on('layout:change', this.metodChangeSVG);
+        mediator.on('layout:change', this._handleSVG.bind(this));
+        // mediator.on('layout:change', this.deletePath.bind(this));
         // mediator.on('3d:turn', this.metodDeleteAll);
         // mediator.on('3d:zoom', this.metodDeleteAll);
         // mediator.on('3d:pan', this.metodDeleteAll);
@@ -40,17 +46,17 @@ class Marks {
 
     _onDownShiftPlusCtrl(e) {
         if (e.shiftKey === true && e.ctrlKey === true)
-            this.flag = true;
+            this._flag = true;
     }
 
     _onUpShiftPlusCtrl(e) {
         if (e.shiftKey === true || e.ctrlKey === true) {
-            this.flag = false;
+            this._flag = false;
         }
     }
 
     // changeSVG(obj){
-    //     if (!this.flag) {
+    //     if (!this._flag) {
     //         return -1;
     //     }
     //
@@ -65,17 +71,15 @@ class Marks {
     //     .style("height", height);
     // }
 
-    // deleteAll(obj) {
-    //     if (!this.flag) {
-    //         return -1;
-    //     }
-    //     if (this.id === obj.id) {
-    //         this.svg.selectAll("path").remove();
-    //     }
-    // }
+    deletePath(obj) {
+
+        if (this.id === obj.id) {
+            this.svg.selectAll("path").remove();
+        }
+    }
 
     mousedown() {
-        if (!this.flag) {
+        if (!this._flag) {
             return -1;
         }
 
@@ -88,7 +92,7 @@ class Marks {
 
         this.svg
         .on("mousemove", () => {
-            if (!this.flag) {
+            if (!this._flag) {
                 this.svg
                 .on("mousemove", null)
                 .on("mouseup", null);
@@ -96,15 +100,6 @@ class Marks {
             }
 
             data.push(d3.mouse(this.svg.node()));
-            console.log(d3.mouse(this.svg.node()));
-            // let coordinate = d3.mouse(this.svg.node());
-            // if (coordinate[0] > width - 5 || coordinate[0] <= 5 || coordinate[1] > height - 5 || coordinate[1] <= 5) {
-            //     this.path.attr("d", this.line(data));
-            //     this.svg.on("mousemove", null).on("mouseup", null);
-            //     data = [];
-            //     return;
-            // }
-
             this.path.attr("d", this.line(data));
         })
         .on("mouseup", () => {
@@ -116,8 +111,37 @@ class Marks {
             // });
 
             this.svg.on("mousemove", null);
+            if (data.length) {
+                this.svg.data[this._countLines++] = data.slice();
+            }
+
+            // setTimeout( this._serializeSVG.bind(this), 20);
             data = [];
         });
+    }
+
+    _serializeSVG () {
+        let copy = this.svg.data;
+        const payload = {
+            userId: this._user.userId,
+            svg: copy,
+        };
+        mediator.emit('layout:change', payload);
+    }
+
+    _handleSVG (payload) {
+        if (payload.userId === this._user.userId && payload.svg) {
+            this._restoreSVG.bind(this)(payload);
+        }
+    }
+
+    _restoreSVG (payload) {
+        const copy2 = {};
+
+
+        console.log(this.svg);
+        console.log(copy2);
+        console.log(payload.svg);
     }
 
     // drowNewLine(obj) {
