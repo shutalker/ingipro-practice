@@ -6,6 +6,7 @@ class Login {
         this._domNode = domNode;
 
         this._domNode.querySelector('form').addEventListener('submit', this._submit.bind(this));
+        this._domNode.querySelector('.js-button').addEventListener('click', this._submit.bind(this));
     }
 
     hide() {
