@@ -28,3 +28,7 @@
     display: inline-block;
     width: 20%;
 }
+
+.microphone-button {
+    width: 100%;
+}
