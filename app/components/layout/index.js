@@ -948,7 +948,7 @@ class Layout {
             name: payload.userList[payload.userList.length - 1].name,
             color: payload.userList[payload.userList.length - 1].color,
         };
-        this._layout = payload['layout:change'];
+        this._layout = payload['layout'];
     }
 
     _setLayout() {
@@ -959,6 +959,7 @@ class Layout {
 
     _serializeLayout() {
         const copy = [];
+        const IDs = [];
 
         for (let i = 0; i < this._tapes.length; i++) {
             if (!this._isEmpty(this._tapes[i])) {
@@ -999,6 +1000,9 @@ class Layout {
                             if (key === 'elem' || key === 'svg' || key === 'viewer') {
                                 continue;
                             }
+                            if (key === 'globalId') {
+                                IDs.push(this._tapes[i][parentKey][key]);
+                            }
 
                             copy[i][parentKey][key] = this._tapes[i][parentKey][key];
                         }
@@ -1010,6 +1014,7 @@ class Layout {
         const payload = {
             userId: this._user.userId,
             layout: copy,
+            layoutIDs: IDs,
         };
 
         mediator.emit('layout:change', payload);
@@ -1078,7 +1083,7 @@ class Layout {
                                 this._tapes[i][parentKey].svg = this._marks.svg;
 
                                 this._tapes[i][parentKey].viewer = new Viewer(this._tapes[i][parentKey].elem, this._tapes[i][parentKey].globalId, this._user.userId);
-                                
+
                             } else {
                                 this._tapes[i][parentKey].elem.className = 'line cellLine';
                             }
