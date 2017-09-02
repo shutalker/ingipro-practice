@@ -13,9 +13,9 @@ class Layout {
         this._domNode = domNode;
 
         document.addEventListener('click', this._changeLayout.bind(this), false);
-        mediator.on('layout:change', this._handleLayout.bind(this));
-        mediator.on('conference:sync', this._getUser.bind(this));
-
+        document.addEventListener('keydown', this._onDownCtrl.bind(this), false);
+        document.addEventListener('keyup', this._onUpCtrl.bind(this), false);
+        mediator.on('conference:sync', this._getUserAndLayout.bind(this));
     }
 
     hide() {
@@ -25,6 +25,20 @@ class Layout {
     show() {
         this._domNode.classList.remove('hide');
         setTimeout(this._createLayout.bind(this), 20);
+        setTimeout(this._setLayout.bind(this), 20);
+        mediator.on('layout:change', this._handleLayout.bind(this));
+    }
+
+    _onDownCtrl(e) {
+        if (e.ctrlKey === true) {this._enabled = true;}
+        if (e.shiftKey === true) {this._enabled = false;}
+        if (e.shiftKey === true && e.ctrlKey === true) {this._enabled = false;}
+    }
+
+    _onUpCtrl(e) {
+        if (e.ctrlKey === false) {
+            this._enabled = false;
+        }
     }
 
     _createLayout() {
@@ -217,15 +231,7 @@ class Layout {
 
         this._marks = new Marks(this._user, this._tapes[parentId][id]);
         this._tapes[parentId][id].svg = this._marks.svg;
-        // this._tapes[parentId][id].viewer = new Viewer(this._tapes[parentId][id], this._user.userId);
 
-
-        //this._marks = new Marks(this._user, this._tapes[parentId][id]);
-        //this._tapes[parentId][id].svg = this._marks.svg;
-
-
-        //this._viewer = new Viewer(this._tapes[parentId][id].elem, this._user.userId);
-        //this._tapes[parentId][id].svg = this._viewer.renderer.domElement;
         this._tapes[parentId][id].viewer = new Viewer(this._tapes[parentId][id].elem, this._tapes[parentId][id].globalId, this._user.userId);
     }
 
@@ -248,7 +254,7 @@ class Layout {
         if (e.which !== 1) {return;}
         let line = {};
 
-        if (!e.target.classList || !e.target.classList.contains('line')) {
+        if (!e.target.classList || !e.target.classList.contains('line') || !this._enabled) {
             return;
         }
 
@@ -592,11 +598,13 @@ class Layout {
 
         if (parseFloat(this._next.elem.style.flexBasis) < this._MINSIZE / 2) {
             this._deleteNext (e);
+            setTimeout(this._serializeLayout.bind(this), 20);
             return false;
         }
 
         if (parseFloat(this._previous.elem.style.flexBasis) < this._MINSIZE / 2) {
             this._deletePrevious (e);
+            setTimeout(this._serializeLayout.bind(this), 20);
             return false;
         }
 
@@ -625,16 +633,15 @@ class Layout {
 
         if (parseFloat(this._next.elem.style.flexBasis) < this._MINSIZE / 2) {
             this._deleteNextCell (e);
+            setTimeout(this._serializeLayout.bind(this), 20);
             return;
         }
 
         if (parseFloat(this._previous.elem.style.flexBasis) < this._MINSIZE / 2) {
             this._deletePreviousCell (e);
+            setTimeout(this._serializeLayout.bind(this), 20);
             return;
         }
-
-        //this._tapes[this._next.elem.tapeId][this._next.elem.id].viewer.editCanvasSize();
-        //this._tapes[this._previous.elem.tapeId][this._previous.elem.id].viewer.editCanvasSize();
 
         setTimeout(this._serializeLayout.bind(this), 20);
 
@@ -935,12 +942,19 @@ class Layout {
         return wrapper;
     }
 
-    _getUser(payload) {
+    _getUserAndLayout(payload) {
         this._user = {
             userId: payload.userList[payload.userList.length - 1].userId,
             name: payload.userList[payload.userList.length - 1].name,
             color: payload.userList[payload.userList.length - 1].color,
         };
+        this._layout = payload['layout:change'];
+    }
+
+    _setLayout() {
+        if (!this._isEmpty(this._layout)) {
+            setTimeout(this._restoreLayout.bind(this)(this._layout), 20);
+        }
     }
 
     _serializeLayout() {
@@ -949,42 +963,44 @@ class Layout {
         for (let i = 0; i < this._tapes.length; i++) {
             if (!this._isEmpty(this._tapes[i])) {
                 copy[i] = {};
+
+                copy[i].elem = {};
+                copy[i].elem.id = this._tapes[i].elem.id;
+                if (i === 0) {
+                    copy[i].elem.flexDirection = this._tapes[i].elem.style.flexDirection;
+                }
+                if (i > 4) {
+                    copy[i].elem.flexBasis = this._tapes[i].elem.style.flexBasis;
+                    copy[i].elem.order = this._tapes[i].elem.style.order;
+                }
+
                 for (let parentKey in this._tapes[i]) {
+                    if (parentKey === 'elem') {
+                        continue;
+                    }
+
                     if (isNaN(parentKey)) {
-                        if (parentKey !== 'elem') {
-                            copy[i][parentKey] = this._tapes[i][parentKey];
-                        } else {
-                            copy[i].elem = {};
-                            copy[i].elem.id = this._tapes[i].elem.id;
-                            if (i === 0) {
-                                copy[i].elem.flexDirection = this._tapes[i].elem.style.flexDirection;
-                            }
-                            if (i > 4) {
-                                copy[i].elem.flexBasis = this._tapes[i].elem.style.flexBasis;
-                                copy[i].elem.order = this._tapes[i].elem.style.order;
-                            }
-                        }
+                        copy[i][parentKey] = this._tapes[i][parentKey];
                     } else {
                         copy[i][parentKey] = {};
+
+                        copy[i][parentKey].elem = {};
+                        copy[i][parentKey].elem.id = this._tapes[i][parentKey].elem.id;
+                        copy[i][parentKey].elem.tapeId = this._tapes[i][parentKey].elem.tapeId;
+                        if (parentKey === '0') {
+                            copy[i][parentKey].elem.flexDirection = this._tapes[i][parentKey].elem.style.flexDirection;
+                        }
+                        if (parentKey > 4) {
+                            copy[i][parentKey].elem.flexBasis = this._tapes[i][parentKey].elem.style.flexBasis;
+                            copy[i][parentKey].elem.order = this._tapes[i][parentKey].elem.style.order;
+                        }
+
                         for (let key in this._tapes[i][parentKey]) {
-                            if (key !== 'elem' && key !== 'viewer') {
-                                // if (key === "svg") {
-                                //         copy[i][parentKey].svg = this._tapes[i][parentKey].svg.data;
-                                // } else {
-                                copy[i][parentKey][key] = this._tapes[i][parentKey][key];
-                                // }
-                            } else {
-                                copy[i][parentKey].elem = {};
-                                copy[i][parentKey].elem.id = this._tapes[i][parentKey].elem.id;
-                                copy[i][parentKey].elem.tapeId = this._tapes[i][parentKey].elem.tapeId;
-                                if (parentKey === '0') {
-                                    copy[i][parentKey].elem.flexDirection = this._tapes[i][parentKey].elem.style.flexDirection;
-                                }
-                                if (parentKey > 4) {
-                                    copy[i][parentKey].elem.flexBasis = this._tapes[i][parentKey].elem.style.flexBasis;
-                                    copy[i][parentKey].elem.order = this._tapes[i][parentKey].elem.style.order;
-                                }
+                            if (key === 'elem' || key === 'svg' || key === 'viewer') {
+                                continue;
                             }
+
+                            copy[i][parentKey][key] = this._tapes[i][parentKey][key];
                         }
                     }
                 }
@@ -995,88 +1011,118 @@ class Layout {
             userId: this._user.userId,
             layout: copy,
         };
+
         mediator.emit('layout:change', payload);
     }
 
     _handleLayout(payload) {
-        if (payload.userId === this._user.userId && payload.layout) {
-            // console.log('qwerty');
-            // this._restoreLayout.bind(this)(payload);
+        if (payload.userId !== this._user.userId) {
+            this._restoreLayout.bind(this)(payload);
         }
     }
 
     _restoreLayout(payload) {
-        const copy2 = [];
-
         for (let i = 0; i < payload.layout.length; i++) {
             if (!this._isEmpty(payload.layout[i])) {
-                copy2[i] = {};
-                for (let parentKey in payload.layout[i]) {
-                    if (isNaN(parentKey)) {
-                        if (parentKey !== 'elem') {
-                            copy2[i][parentKey] = payload.layout[i][parentKey];
-                        } else {
-                            if (i > 4) {
-                                copy2[i].elem = document.createElement('div');
-                                if (i % 2) {
-                                    copy2[i].elem.className = 'tape';
-                                    this._createCellBackground();
-                                    this._createCellBorder();
-                                    this._createNewCell();
-                                } else {
-                                    copy2[i].elem.className = 'line tapeLine';
-                                }
-                            } else {
-                                copy2[i].elem = this._tapes[i].elem;
-                            }
-                            copy2[i].elem.id = payload.layout[i].elem.id;
-                            if (i === 0) {
-                                copy2[i].elem.style.flexDirection = payload.layout[i].elem.flexDirection;
-                            }
-                            if (i > 4) {
-                                copy2[i].elem.style.flexBasis = payload.layout[i].elem.flexBasis;
-                                copy2[i].elem.style.order = payload.layout[i].elem.order;
-                            }
-                        }
+
+                if (this._isEmpty(this._tapes[i])) {
+                    this._tapes[i] = {};
+                }
+
+                if (i > 5 && !this._tapes[i].hasOwnProperty('elem')) {
+                    this._tapes[i].elem = document.createElement('div');
+                    if (parseInt(i, 10) % 2) {
+                        this._tapes[i].elem.className = 'tape';
+
+                        this._createCellBackground();
+                        this._createCellBorder();
+                        this._tapes[0].cellsNumber--;
+                        this._createNewCell();
+                        this._tapes[i][0].elem.appendChild(this._tapes[i][5].elem);
                     } else {
-                        copy2[i][parentKey] = {};
-                        for (let key in payload.layout[i][parentKey]) {
-                            if (key !== 'elem') {
-                                // if (key === "svg") {
-                                //         copy[i][parentKey].svg = this._tapes[i][parentKey].svg.data;
-                                // } else {
-                                copy2[i][parentKey][key] = payload.layout[i][parentKey][key];
-                                // }
+                        this._tapes[i].elem.className = 'line tapeLine';
+                    }
+                    this._tapes[i].elem.id = payload.layout[i].elem.id;
+                    this._tapes[0].elem.appendChild(this._tapes[i].elem);
+                }
+
+                if (i === 0) {
+                    this._tapes[i].elem.style.flexDirection = payload.layout[i].elem.flexDirection;
+                }
+                if (i > 4) {
+                    this._tapes[i].elem.style.flexBasis = payload.layout[i].elem.flexBasis;
+                    this._tapes[i].elem.style.order = payload.layout[i].elem.order;
+                }
+
+                for (let parentKey in payload.layout[i]) {
+                    if (parentKey === 'elem') {
+                        continue;
+                    }
+
+                    if (isNaN(parentKey)) {
+                        this._tapes[i][parentKey] = payload.layout[i][parentKey];
+                    } else {
+                        if (this._isEmpty(this._tapes[i][parentKey])) {
+                            this._tapes[i][parentKey] = {};
+                        }
+
+                        if (parentKey > 5 && !this._tapes[i][parentKey].hasOwnProperty('elem')) {
+                            this._tapes[i][parentKey].elem = document.createElement('div');
+
+                            if (parseInt(parentKey, 10) % 2) {
+                                this._tapes[i][parentKey].elem.className = 'cell';
+
+                                this._tapes[i][parentKey].globalId = payload.layout[i][parentKey].globalId;
+
+                                this._marks = new Marks(this._user, this._tapes[i][parentKey]);
+                                this._tapes[i][parentKey].svg = this._marks.svg;
+
+                                this._tapes[i][parentKey].viewer = new Viewer(this._tapes[i][parentKey].elem, this._tapes[i][parentKey].globalId, this._user.userId);
+                                
                             } else {
-                                if (i > 4) {
-                                    copy2[i][parentKey].elem = document.createElement('div');
-                                    if (i % 2) {
-                                        copy2[i][parentKey].elem.className = 'cell';
-                                    } else {
-                                        copy2[i][parentKey].elem.className = 'line cellLine';
-                                    }
-                                } else {
-                                    copy2[i].elem = this._tapes[i][parentKey].elem;
-                                }
-                                copy2[i][parentKey].elem.id = payload.layout[i][parentKey].elem.id;
-                                copy2[i][parentKey].elem.tapeId = payload.layout[i][parentKey].elem.tapeId;
-                                if (parentKey === '0') {
-                                    copy2[i][parentKey].elem.style.flexDirection = payload.layout[i][parentKey].elem.flexDirection;
-                                }
-                                if (parentKey > 4) {
-                                    copy2[i][parentKey].elem.style.flexBasis = payload.layout[i][parentKey].elem.flexBasis;
-                                    copy2[i][parentKey].elem.style.order = payload.layout[i][parentKey].elem.order;
-                                }
+                                this._tapes[i][parentKey].elem.className = 'line cellLine';
                             }
+
+                            this._tapes[i][parentKey].elem.id = payload.layout[i][parentKey].elem.id;
+                            this._tapes[i][parentKey].elem.tapeId = payload.layout[i][parentKey].elem.tapeId;
+                            this._tapes[i][0].elem.appendChild(this._tapes[i][parentKey].elem);
+                        }
+
+                        if (parentKey === '0') {
+                            this._tapes[i][parentKey].elem.style.flexDirection = payload.layout[i][parentKey].elem.flexDirection;
+                        }
+                        if (parentKey > 4) {
+                            this._tapes[i][parentKey].elem.style.flexBasis = payload.layout[i][parentKey].elem.flexBasis;
+                            this._tapes[i][parentKey].elem.style.order = payload.layout[i][parentKey].elem.order;
+                        }
+
+                        for (let key in payload.layout[i][parentKey]) {
+                            if (key === 'elem' || key === 'svg' || key === 'viewer' || key === 'globalId') {
+                                continue;
+                            }
+                            this._tapes[i][parentKey][key] = payload.layout[i][parentKey][key];
                         }
                     }
                 }
+
+                for (let parentKey in this._tapes[i]) {
+                    if (isNaN(parentKey)) {
+                        continue;
+                    }
+
+                    if (this._isEmpty(payload.layout[i][parentKey])) {
+                        this._tapes[i][0].elem.removeChild(this._tapes[i][parentKey].elem);
+                        delete this._tapes[i][parentKey];
+                    }
+                }
+
+            } else {
+                if (!this._isEmpty(this._tapes[i])) {
+                    this._tapes[0].elem.removeChild(this._tapes[i].elem);
+                    delete this._tapes[i];
+                }
             }
         }
-
-        // console.log(this._tapes);
-        // console.log(copy2);
-        // console.log(payload.layout);
     }
 }
 
