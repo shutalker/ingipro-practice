@@ -1,4 +1,5 @@
 .users {
+    overflow: auto;
     box-sizing: border-box;
     flex-grow: 1;
     padding-top: 70px;
@@ -27,8 +28,4 @@
 .userColor {
     display: inline-block;
     width: 20%;
-}
-
-.microphone-button {
-    width: 100%;
 }
