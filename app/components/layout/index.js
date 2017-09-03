@@ -978,12 +978,22 @@ class Layout {
             name: payload.userList[payload.userList.length - 1].name,
             color: payload.userList[payload.userList.length - 1].color,
         };
+
+        this._viewer = {
+            model: payload.model,
+            camera: payload.camera,
+            texture: payload.texture,
+        };
+
         this._layout = payload['layout'];
     }
 
     _setLayout() {
         if (!this._isEmpty(this._layout)) {
             setTimeout(this._restoreLayout.bind(this)(this._layout), 20);
+        }
+        if (!this._isEmpty(this._viewer)) {
+            mediator.emit('viewer:sync', this._viewer);
         }
     }
 
@@ -1065,6 +1075,7 @@ class Layout {
                     this._tapes[i] = {};
                 }
 
+
                 // if more than one tape
                 if (i > 5 && !this._tapes[i].elem) {
                     this._tapes[i].elem = document.createElement('div');
@@ -1116,6 +1127,7 @@ class Layout {
                             this._tapes[i][parentKey] = {};
                         }
 
+
                         // if more than one tape children
                         if (parentKey > 5 && !this._tapes[i][parentKey].hasOwnProperty('elem')) {
                             this._tapes[i][parentKey].elem = document.createElement('div');
@@ -1152,7 +1164,7 @@ class Layout {
                         }
 
                         for (let key in payload.layout[i][parentKey]) {
-                            if (key === 'elem' || key === 'svg' || key === 'viewer' || key === 'globalId') {
+                            if (['elem', 'svg', 'viewer', 'globalId'].includes(key)) {
                                 continue;
                             }
                             this._tapes[i][parentKey][key] = payload.layout[i][parentKey][key];
