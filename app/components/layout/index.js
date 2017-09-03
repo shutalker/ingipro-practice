@@ -50,13 +50,13 @@ class Layout {
         // min size/2 (%) of tape for deleting
         this._tapes = []; // store for tapes, lines and cells
 
-        this._createTapeBackground();  // setup root node
-        this._createTapeBorder();      // create blue borders
-        this._createNewTape();         // create tape (includes cells)
+        this._createTapeBackground(); // setup root node
+        this._createTapeBorder(); // create blue borders
+        this._createNewTape(); // create tape (includes cells)
 
-        this._createCellBackground();  // add cell warapper to tape and tape to root node
-        this._createCellBorder();      // add black borders
-        this._createNewCell();         // create first cell
+        this._createCellBackground(); // add cell warapper to tape and tape to root node
+        this._createCellBorder(); // add black borders
+        this._createNewCell(); // create first cell
     }
 
     /**
@@ -140,7 +140,7 @@ class Layout {
         this._tapes[id].elem.id = id;
         this._tapes[0].currentTapeId = id;
 
-        if (id === 5) {  // first tape?
+        if (id === 5) { // first tape?
             this._tapes[id].elem.style.flexBasis = '100%';
             this._tapes[id].lastFlexBasis = 100;
             this._tapes[id].elem.style.order = 500;
@@ -227,13 +227,11 @@ class Layout {
     /**
      * creates new cell
      */
-    _createNewCell(updateGlobalId = true) {
+    _createNewCell() {
         const parentId = this._tapes[0].currentTapeId;
 
-        if (updateGlobalId) {  // fix?
-            this._tapes[parentId][0].cellsNumber++;
-            this._tapes[parentId][0].lastCellId++;
-        }
+        this._tapes[parentId][0].cellsNumber++;
+        this._tapes[parentId][0].lastCellId++;
 
         const id = this._tapes[parentId][0].lastCellId;
 
@@ -245,9 +243,9 @@ class Layout {
         this._tapes[parentId][id].elem.tapeId = parentId;
 
         this._tapes[parentId][0].currentCellId = id;
-        this._tapes[parentId][id].globalId = ++this._tapes[0].cellsNumber;   // global id
+        this._tapes[parentId][id].globalId = ++this._tapes[0].cellsNumber; // global id
 
-        if (id === 5) {  // first cell?
+        if (id === 5) { // first cell?
             this._tapes[parentId][id].elem.style.flexBasis = '100%';
             this._tapes[parentId][id].lastFlexBasis = 100;
             this._tapes[parentId][id].elem.style.order = 500;
@@ -1062,11 +1060,11 @@ class Layout {
 
     _handleLayout(payload) {
         if (payload.userId !== this._user.userId) {
-            this._restoreLayout.bind(this)(payload);
+            this._syncLayout.bind(this)(payload);
         }
     }
 
-    _restoreLayout(payload) {
+    _syncLayout(payload) {
         for (let i = 0; i < payload.layout.length; i++) {
             if (!this._isEmpty(payload.layout[i])) {
 
@@ -1084,11 +1082,12 @@ class Layout {
                     if (parseInt(i, 10) % 2) {
                         this._tapes[i].elem.className = 'tape';
 
+
                         this._createCellBackground();
                         this._createCellBorder();
                         this._tapes[0].cellsNumber--; // wtf
-                        this._createNewCell(false);
-                        this._tapes[i][0].elem.appendChild(this._tapes[i][5].elem);
+                        this._createNewCell();
+                        // this._tapes[i][0].elem.appendChild(this._tapes[i][5].elem);
 
                     // create tape line
                     } else {
@@ -1193,6 +1192,137 @@ class Layout {
             }
         }
     }
+
+    _restoreLayout(payload) {
+        for (let i = 0; i < payload.layout.length; i++) {
+            if (!this._isEmpty(payload.layout[i])) {
+
+                // check is not tape exist and create one
+                if (this._isEmpty(this._tapes[i])) {
+                    this._tapes[i] = {};
+                }
+
+                // if more than one tape
+                if (i > 5 && !this._tapes[i].hasOwnProperty('elem')) {
+                    this._tapes[i].elem = document.createElement('div');
+
+                    // create tape
+                    if (parseInt(i, 10) % 2) {
+                        this._tapes[i].elem.className = 'tape';
+
+                        this._tapes[0].lastTapeId = i;
+                        this._tapes[0].currentTapeId = i;
+
+                        this._createCellBackground();
+                        this._createCellBorder();
+                        this._createNewCell();
+
+                        // create tape line
+                    } else {
+                        this._tapes[i].elem.className = 'line tapeLine';
+                    }
+
+                    // add to dom
+                    this._tapes[i].elem.id = payload.layout[i].elem.id;
+                    this._tapes[0].elem.appendChild(this._tapes[i].elem);
+                }
+
+                // tune root elem (settings)
+                if (i === 0) {
+                    this._tapes[i].elem.style.flexDirection = payload.layout[i].elem.flexDirection;
+                    this._tapes[i].direction = payload.layout[i].direction;
+                }
+
+                // tune tapes (settings)
+                if (i > 4) {
+                    this._tapes[i].elem.style.flexBasis = payload.layout[i].elem.flexBasis;
+                    this._tapes[i].elem.style.order = payload.layout[i].elem.order;
+                }
+
+                // process children nodes
+                for (let parentKey in payload.layout[i]) {
+                    if (parentKey === 'elem') { // skip root node
+                        continue;
+                    }
+
+                    // check is key number?
+                    if (isNaN(parentKey)) {
+                        // replace data by server data
+                        if (i !== 0) {
+                            this._tapes[i][parentKey] = payload.layout[i][parentKey];
+                        }
+                    } else {
+                        // check is tape exist and create one
+                        if (this._isEmpty(this._tapes[i][parentKey])) {
+                            this._tapes[i][parentKey] = {};
+                        }
+
+                        // if more than one tape children
+                        if (parentKey > 5 && !this._tapes[i][parentKey].hasOwnProperty('elem')) {
+                            this._tapes[i][parentKey].elem = document.createElement('div');
+
+                            // create cell
+                            if (parseInt(parentKey, 10) % 2) {
+                                this._tapes[i][parentKey].elem.className = 'cell';
+
+                                this._tapes[i][parentKey].globalId = payload.layout[i][parentKey].globalId;
+
+                                this._marks = new Marks(this._user, this._tapes[i][parentKey]);
+                                this._tapes[i][parentKey].svg = this._marks.svg;
+
+                                this._tapes[i][parentKey].viewer = new Viewer(this._tapes[i][parentKey].elem, this._tapes[i][parentKey].globalId, this._user.userId);
+
+                                // create separator
+                            } else {
+                                this._tapes[i][parentKey].elem.className = 'line cellLine';
+                            }
+
+                            // append to dom
+                            this._tapes[i][parentKey].elem.id = payload.layout[i][parentKey].elem.id;
+                            this._tapes[i][parentKey].elem.tapeId = payload.layout[i][parentKey].elem.tapeId;
+                            this._tapes[i][0].elem.appendChild(this._tapes[i][parentKey].elem);
+                        }
+
+                        // tune ? (settings)
+                        if (parentKey === '0') {
+                            this._tapes[i][parentKey].elem.style.flexDirection = payload.layout[i][parentKey].elem.flexDirection;
+                        }
+                        if (parentKey > 4) {
+                            this._tapes[i][parentKey].elem.style.flexBasis = payload.layout[i][parentKey].elem.flexBasis;
+                            this._tapes[i][parentKey].elem.style.order = payload.layout[i][parentKey].elem.order;
+                        }
+
+                        for (let key in payload.layout[i][parentKey]) {
+                            if (key === 'elem' || key === 'svg' || key === 'viewer' || key === 'globalId') {
+                                continue;
+                            }
+                            this._tapes[i][parentKey][key] = payload.layout[i][parentKey][key];
+                        }
+                    }
+                }
+
+                // cleaning
+                for (let parentKey in this._tapes[i]) {
+                    if (isNaN(parentKey)) {
+                        continue;
+                    }
+
+                    if (this._isEmpty(payload.layout[i][parentKey])) {
+                        this._tapes[i][0].elem.removeChild(this._tapes[i][parentKey].elem);
+                        delete this._tapes[i][parentKey];
+                    }
+                }
+
+                // cleaning
+            } else {
+                if (!this._isEmpty(this._tapes[i])) {
+                    this._tapes[0].elem.removeChild(this._tapes[i].elem);
+                    delete this._tapes[i];
+                }
+            }
+        }
+    }
+
 
     _onContextMenu(e) {
         e.preventDefault();
