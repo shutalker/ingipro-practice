@@ -59,7 +59,7 @@
     "lint:stylelint": "files=$(git diff --name-only --diff-filter=ACMR --cached | grep .scss); if [ ! -z \"$files\" -a \"$files\" != \" \" ]; then stylelint $files; fi",
     "build": "NODE_ENV=production webpack",
     "watch": "webpack --watch --color",
-    "test": "npm run start & p1=\"$!\"; if [ \"$?\" -ne 0 ]; then kill -9 -$p1; exit 1; fi; ./node_modules/.bin/wdio wdio.conf.js; kill -9 -$p1;"
+    "test": "npm run start & ./node_modules/.bin/wdio wdio.conf.js; ps -eo pid,pgid,comm,args | grep -E '^(.*node.*)+app/server.js$' | awk '{print $1}' | xargs kill -9"
   },
   "pre-commit": [
     "lint",
