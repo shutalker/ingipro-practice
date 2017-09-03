@@ -108,6 +108,9 @@ function getConfig(env) {
                     removeComments: true,
                 },
             }),
+            new webpack.DefinePlugin({
+                NODE_ENV,
+            }),
         ].filter(Boolean),
 
         watchOptions: {

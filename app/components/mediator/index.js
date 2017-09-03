@@ -1,3 +1,4 @@
+/* global NODE_ENV*/
 'use strict';
 
 class Mediator {
@@ -45,4 +46,10 @@ class Mediator {
     }
 }
 
-export default new Mediator();
+const instance = new Mediator();
+
+if (NODE_ENV !== 'production') {
+    window.mediator = instance;
+}
+
+export default instance;
