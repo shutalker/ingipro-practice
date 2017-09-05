@@ -11,6 +11,7 @@ class Layout {
         // eslint-disable-next-line
         console.log('"Layout" created');
         this._domNode = domNode;
+        this._ctrlPressed = false;
 
         document.addEventListener('click', this._changeLayout.bind(this), false);
         document.addEventListener('keydown', this._onDownCtrl.bind(this), false);
@@ -33,11 +34,31 @@ class Layout {
         if (e.ctrlKey === true) {this._enabled = true;}
         if (e.shiftKey === true) {this._enabled = false;}
         if (e.shiftKey === true && e.ctrlKey === true) {this._enabled = false;}
+
+        if(this._enabled === true && this._ctrlPressed === false) {
+            this._ctrlPressed = true;
+
+            const payload = {
+                userId: this._user.userId,
+            }
+
+            mediator.emit('canvas:lock', payload);
+        }
     }
 
     _onUpCtrl(e) {
         if (e.ctrlKey === false) {
             this._enabled = false;
+        }
+
+        if(this._enabled === false) {
+            this._ctrlPressed = false;
+            
+            const payload = {
+                userId: this._user.userId,
+            }
+
+            mediator.emit('canvas:unlock', payload);
         }
     }
 
